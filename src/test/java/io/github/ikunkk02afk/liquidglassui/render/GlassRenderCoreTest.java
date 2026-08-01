@@ -31,4 +31,27 @@ class GlassRenderCoreTest {
         assertEquals("shader", latch.reason());
         assertEquals(1, reports.get());
     }
+
+    @Test
+    void guiCoordinatesMapToPhysicalPixelsAndFlipYExactlyOnce() {
+        for (int scale : new int[]{2, 3, 4}) {
+            GlassCoordinateMapper mapper = new GlassCoordinateMapper(640, 360, 640 * scale, 360 * scale);
+            GlassRectangle physical = mapper.toFramebuffer(new GlassRectangle(100, 50, 200, 20));
+            assertEquals(100 * scale, physical.x());
+            assertEquals(50 * scale, physical.y());
+            assertEquals(200 * scale, physical.width());
+            assertEquals(20 * scale, physical.height());
+            assertEquals(100.0f / 640.0f, mapper.textureU(100), 0.00001f);
+            assertEquals(1.0f - 50.0f / 360.0f, mapper.textureV(50), 0.00001f);
+        }
+    }
+
+    @Test
+    void nonIntegerHighDpiScalePreservesNormalizedCoordinates() {
+        GlassCoordinateMapper mapper = new GlassCoordinateMapper(853, 479, 1920, 1080);
+        assertEquals(1920.0f / 853.0f, mapper.scaleX(), 0.00001f);
+        assertEquals(1080.0f / 479.0f, mapper.scaleY(), 0.00001f);
+        assertEquals(0.5f, mapper.textureU(426.5f), 0.00001f);
+        assertEquals(0.5f, mapper.textureV(239.5f), 0.00001f);
+    }
 }

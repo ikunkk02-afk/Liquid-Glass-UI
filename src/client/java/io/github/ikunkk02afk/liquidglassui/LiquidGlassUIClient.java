@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.screens.Screen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,14 @@ public final class LiquidGlassUIClient implements ClientModInitializer {
 
     public static boolean tryRenderWidget(AbstractWidget widget, GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         return screenManager != null && screenManager.tryRenderWidget(widget, graphics, mouseX, mouseY, delta);
+    }
+
+    public static void captureBackdrop(Screen screen, GuiGraphics graphics) {
+        if (screenManager != null) screenManager.captureBackdrop(screen, graphics);
+    }
+
+    public static boolean shouldKeepPauseBackdropClear(Screen screen) {
+        return screenManager != null && screenManager.shouldKeepPauseBackdropClear(screen);
     }
 
     public static LiquidGlassConfigManager configManager() {

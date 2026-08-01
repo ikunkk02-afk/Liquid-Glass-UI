@@ -60,12 +60,12 @@ public final class LiquidGlassConfigData {
     public static final class Appearance {
         public boolean enabled = true;
         public String mainColor = "#DDE7F2";
-        public float opacity = 0.42f;
-        public float tintIntensity = 0.18f;
-        public float cornerRadius = 8.0f;
-        public float edgeWidth = 0.85f;
-        public float edgeHighlightIntensity = 0.55f;
-        public float innerShadowIntensity = 0.32f;
+        public float opacity = 0.22f;
+        public float tintIntensity = 0.10f;
+        public float cornerRadius = 9.0f;
+        public float edgeWidth = 0.65f;
+        public float edgeHighlightIntensity = 0.30f;
+        public float innerShadowIntensity = 0.12f;
         public boolean adaptToBackgroundBrightness = true;
 
         private Appearance copy() {
@@ -97,11 +97,11 @@ public final class LiquidGlassConfigData {
     public static final class Optics {
         public float blurIntensity = 0.70f;
         public float blurRadius = 6.0f;
-        public float refractionIntensity = 0.08f;
+        public float refractionIntensity = 0.025f;
         public float edgeRefractionRange = 0.28f;
-        public float mouseHighlightIntensity = 0.42f;
-        public float mouseHighlightRange = 0.65f;
-        public float surfaceNoiseIntensity = 0.025f;
+        public float mouseHighlightIntensity = 0.20f;
+        public float mouseHighlightRange = 0.78f;
+        public float surfaceNoiseIntensity = 0.008f;
 
         private Optics copy() {
             Optics copy = new Optics();
@@ -183,6 +183,7 @@ public final class LiquidGlassConfigData {
         public int customBlurPasses = 3;
         public GlassRefractionQuality customRefractionQuality = GlassRefractionQuality.LOW;
         public int customSampleCount = 4;
+        public GlassDebugView debugView = GlassDebugView.OFF;
 
         private Performance copy() {
             Performance copy = new Performance();
@@ -191,12 +192,14 @@ public final class LiquidGlassConfigData {
             copy.customBlurPasses = customBlurPasses;
             copy.customRefractionQuality = customRefractionQuality;
             copy.customSampleCount = customSampleCount;
+            copy.debugView = debugView;
             return copy;
         }
 
         private void sanitize() {
             if (preset == null) preset = GlassQualityPreset.MEDIUM;
             if (customRefractionQuality == null) customRefractionQuality = GlassRefractionQuality.LOW;
+            if (debugView == null) debugView = GlassDebugView.OFF;
             float[] allowed = {0.25f, 0.5f, 0.75f, 1.0f};
             float nearest = allowed[0];
             for (float option : allowed) {

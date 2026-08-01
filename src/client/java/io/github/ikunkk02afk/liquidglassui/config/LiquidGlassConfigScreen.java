@@ -12,6 +12,7 @@ import dev.isxander.yacl3.api.controller.EnumControllerBuilder;
 import dev.isxander.yacl3.api.controller.FloatSliderControllerBuilder;
 import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
 import io.github.ikunkk02afk.liquidglassui.LiquidGlassUIClient;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -114,6 +115,10 @@ public final class LiquidGlassConfigScreen {
         ConfigCategory.Builder category = ConfigCategory.createBuilder().name(tr("category.performance"));
         if (LiquidGlassUIClient.renderBackend().status().safeMode()) {
             category.option(LabelOption.create(tr("performance.safe_mode_active")));
+        }
+        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            category.option(enumeration("performance.debug_view", GlassDebugView.class, defaults.performance.debugView,
+                    () -> data.performance.debugView, value -> data.performance.debugView = value, "debug_view"));
         }
         return category
                 .option(enumeration("performance.preset", GlassQualityPreset.class, defaults.performance.preset,

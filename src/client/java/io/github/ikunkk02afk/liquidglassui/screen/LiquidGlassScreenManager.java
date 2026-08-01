@@ -49,13 +49,25 @@ public final class LiquidGlassScreenManager {
 
         LiquidGlassConfigButton configButton = null;
         if (screen instanceof TitleScreen || screen instanceof PauseScreen) {
-            configButton = new LiquidGlassConfigButton(screen);
+            int commonWidth = 200;
+            int maxBottom = 0;
+            for (AbstractWidget widget : Screens.getButtons(screen)) {
+                if (isPrimaryMenuButton(screen, widget)) {
+                    commonWidth = Math.max(commonWidth, widget.getWidth());
+                    maxBottom = Math.max(maxBottom, widget.getBottom());
+                }
+            }
+            commonWidth = Math.min(commonWidth, Math.max(80, screen.width - 20));
+            int x = (screen.width - commonWidth) / 2;
+            int y = Math.min(Math.max(6, screen.height - 26), maxBottom + 4);
+            configButton = new LiquidGlassConfigButton(screen, x, y, commonWidth);
             Screens.getButtons(screen).add(configButton);
         }
 
         ScreenState state = new ScreenState();
         for (AbstractWidget widget : Screens.getButtons(screen)) {
-            if (widget instanceof AbstractButton button && !(button instanceof PlainTextButton)) {
+            if (widget instanceof AbstractButton button && !(button instanceof PlainTextButton)
+                    && (button == configButton || isPrimaryMenuButton(screen, button))) {
                 GlassWidgetState widgetState = new GlassWidgetState(button);
                 state.widgets.put(button, widgetState);
                 state.groups.put(button, button == configButton ? state.settingsGroup : state.mainGroup);
@@ -110,11 +122,27 @@ public final class LiquidGlassScreenManager {
         return renderer.render(button, graphics, widgetState, state.groups.get(button), configManager.get());
     }
 
+    public void captureBackdrop(Screen screen, GuiGraphics graphics) {
+        ScreenState state = screens.get(screen);
+        LiquidGlassConfigData config = configManager.get();
+        if (state != null && enabledFor(screen, config)) backend.captureBackground(graphics, config);
+    }
+
+    public boolean shouldKeepPauseBackdropClear(Screen screen) {
+        return screen instanceof PauseScreen && enabledFor(screen, configManager.get());
+    }
+
     private boolean enabledFor(Screen screen, LiquidGlassConfigData config) {
         if (!config.appearance.enabled || !config.ui.replaceCommonButtons) return false;
         if (screen instanceof TitleScreen) return config.ui.mainMenu;
         if (screen instanceof PauseScreen) return config.ui.pauseMenu;
         return screen instanceof ConfirmScreen && config.ui.confirmDialogs;
+    }
+
+    private static boolean isPrimaryMenuButton(Screen screen, AbstractWidget widget) {
+        if (!(widget instanceof AbstractButton) || widget instanceof PlainTextButton || widget.getWidth() < 90) return false;
+        float center = widget.getX() + widget.getWidth() * 0.5f;
+        return Math.abs(center - screen.width * 0.5f) <= 110.0f;
     }
 
     private void setMousePressed(Screen screen, double mouseX, double mouseY, int mouseButton, boolean pressed) {

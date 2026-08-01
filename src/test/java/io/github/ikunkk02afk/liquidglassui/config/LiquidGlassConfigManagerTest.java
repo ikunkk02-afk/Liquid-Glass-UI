@@ -23,7 +23,7 @@ class LiquidGlassConfigManagerTest {
         assertTrue(Files.isRegularFile(file));
         assertEquals(GlassQualityPreset.MEDIUM, data.performance.preset);
         assertEquals("#DDE7F2", data.appearance.mainColor);
-        assertEquals(0.42f, data.appearance.opacity);
+        assertEquals(0.22f, data.appearance.opacity);
         assertFalse(data.highQualityWarningAcknowledged);
     }
 

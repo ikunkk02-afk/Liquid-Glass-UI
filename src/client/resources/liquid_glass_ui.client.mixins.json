@@ -3,7 +3,8 @@
 	"package": "io.github.ikunkk02afk.liquidglassui.mixin.client",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"AbstractWidgetMixin"
+		"AbstractWidgetMixin",
+		"ScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
