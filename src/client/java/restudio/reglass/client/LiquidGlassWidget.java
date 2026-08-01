@@ -1,0 +1,81 @@
+/*
+ * Adapted from ReGlass by ReStudio / RedxAx.
+ * Original project: https://github.com/RedxAx/ReGlass
+ * Licensed under the MIT License.
+ * Backported and modified for Minecraft Fabric 1.21.1.
+ */
+package restudio.reglass.client;
+
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.network.chat.Component;
+import restudio.reglass.client.api.ReGlassApi;
+import restudio.reglass.client.api.WidgetStyle;
+import restudio.reglass.client.legacy1211.Legacy1211WidgetCollector;
+
+public class LiquidGlassWidget extends AbstractWidget {
+    private float cornerRadiusPx;
+    private boolean moveable;
+    private boolean dragging;
+    private int dragOffsetX;
+    private int dragOffsetY;
+    public WidgetStyle style = new WidgetStyle();
+
+    public LiquidGlassWidget(int x, int y, int width, int height, WidgetStyle style) {
+        super(x, y, width, height, Component.empty());
+        this.cornerRadiusPx = 0.5f * Math.min(width, height);
+        if (style != null) this.style = style;
+    }
+
+    public LiquidGlassWidget setCornerRadiusPx(float radiusPx) {
+        this.cornerRadiusPx = Math.max(0f, radiusPx);
+        return this;
+    }
+
+    public LiquidGlassWidget setMoveable(boolean moveable) {
+        this.moveable = moveable;
+        return this;
+    }
+
+    @Override
+    public void renderWidget(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        ReGlassApi.create(context).fromWidget(this).cornerRadius(cornerRadiusPx).style(this.style).render();
+        Legacy1211WidgetCollector.get().requestComposite();
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!this.moveable) return super.mouseClicked(mouseX, mouseY, button);
+        if (button == 0 && mouseX >= this.getX() && mouseX < this.getX() + this.getWidth() && mouseY >= this.getY() && mouseY < this.getY() + this.getHeight()) {
+            this.dragging = true;
+            this.dragOffsetX = (int) (mouseX - this.getX());
+            this.dragOffsetY = (int) (mouseY - this.getY());
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (this.dragging && button == 0) {
+            int newX = (int) (mouseX - this.dragOffsetX);
+            int newY = (int) (mouseY - this.dragOffsetY);
+            this.setX(newX);
+            this.setY(newY);
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (this.dragging && button == 0) {
+            this.dragging = false;
+        }
+
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override protected void updateWidgetNarration(NarrationElementOutput builder) {}
+}

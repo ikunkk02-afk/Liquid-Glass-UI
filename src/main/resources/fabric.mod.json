@@ -2,36 +2,27 @@
 	"schemaVersion": 1,
 	"id": "liquid_glass_ui",
 	"version": "${version}",
-	"name": "liquid_glass_ui",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Liquid Glass UI",
+	"description": "A faithful Fabric 1.21.1 backport of the ReGlass liquid-glass UI renderer.",
 	"authors": [
-		"Me!"
+		"ikunkk02-afk"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/ikunkk02-afk/Liquid-Glass-UI",
+		"sources": "https://github.com/ikunkk02-afk/Liquid-Glass-UI",
+		"issues": "https://github.com/ikunkk02-afk/Liquid-Glass-UI/issues"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/liquid_glass_ui/icon.png",
-	"environment": "*",
+	"environment": "client",
 	"entrypoints": {
 		"main": [
-			"io.github.ikunkk02afk.liquidglassui.Liquid_glass_ui"
+			"restudio.reglass.ReGlass"
 		],
 		"client": [
-			"io.github.ikunkk02afk.liquidglassui.client.Liquid_glass_uiClient"
-		],
-		"fabric-datagen": [
-			"io.github.ikunkk02afk.liquidglassui.client.Liquid_glass_uiDataGenerator"
+			"restudio.reglass.client.ReGlassClient"
 		]
 	},
-	"mixins": [
-		"liquid_glass_ui.mixins.json",
-		{
-			"config": "liquid_glass_ui.client.mixins.json",
-			"environment": "client"
-		}
-	],
 	"depends": {
 		"fabricloader": ">=0.19.3",
 		"minecraft": "~1.21.1",
