@@ -16,9 +16,14 @@ abstract class ScreenMixin {
         LiquidGlassUIClient.captureBackdrop((Screen) (Object) this, graphics);
     }
 
-    @Inject(method = "renderBackground", at = @At("HEAD"), cancellable = true)
-    private void liquidGlassUI$keepPauseBackdropClear(GuiGraphics graphics, int mouseX, int mouseY,
-                                                       float delta, CallbackInfo callback) {
-        if (LiquidGlassUIClient.shouldKeepPauseBackdropClear((Screen) (Object) this)) callback.cancel();
+    @Inject(method = "render", at = @At("RETURN"))
+    private void liquidGlassUI$compositeBeforeSubclassContents(GuiGraphics graphics, int mouseX, int mouseY,
+                                                                float delta, CallbackInfo callback) {
+        LiquidGlassUIClient.compositeAndRenderContents((Screen) (Object) this, graphics);
+    }
+
+    @Inject(method = "renderBlurredBackground", at = @At("HEAD"), cancellable = true)
+    private void liquidGlassUI$disableVanillaFullScreenBlur(float delta, CallbackInfo callback) {
+        if (LiquidGlassUIClient.shouldCancelVanillaScreenBlur((Screen) (Object) this)) callback.cancel();
     }
 }

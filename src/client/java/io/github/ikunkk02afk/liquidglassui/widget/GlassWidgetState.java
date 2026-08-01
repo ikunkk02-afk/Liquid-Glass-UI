@@ -16,7 +16,7 @@ public final class GlassWidgetState {
     public void update(double delta, int mouseX, int mouseY, LiquidGlassConfigData config) {
         float normalizedX = button.getWidth() == 0 ? 0.5f : (mouseX - button.getX()) / (float) button.getWidth();
         float normalizedY = button.getHeight() == 0 ? 0.5f : (mouseY - button.getY()) / (float) button.getHeight();
-        boolean hovered = button.isHoveredOrFocused() && button.active;
+        boolean hovered = (button.isMouseOver(mouseX, mouseY) || button.isFocused()) && button.active;
         if (!config.animation.enabled) {
             animation.update(delta, false, false, 0.5f, 0.5f, 1.0f, 1.0f, 500.0f, 80.0f, true);
             return;

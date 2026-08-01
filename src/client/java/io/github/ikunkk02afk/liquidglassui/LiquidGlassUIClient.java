@@ -1,7 +1,7 @@
 package io.github.ikunkk02afk.liquidglassui;
 
 import io.github.ikunkk02afk.liquidglassui.config.LiquidGlassConfigManager;
-import io.github.ikunkk02afk.liquidglassui.render.LegacyGlassRenderBackend;
+import io.github.ikunkk02afk.liquidglassui.render.legacy.LegacyGlassRenderBackend;
 import io.github.ikunkk02afk.liquidglassui.screen.LiquidGlassScreenManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -43,8 +43,12 @@ public final class LiquidGlassUIClient implements ClientModInitializer {
         if (screenManager != null) screenManager.captureBackdrop(screen, graphics);
     }
 
-    public static boolean shouldKeepPauseBackdropClear(Screen screen) {
-        return screenManager != null && screenManager.shouldKeepPauseBackdropClear(screen);
+    public static void compositeAndRenderContents(Screen screen, GuiGraphics graphics) {
+        if (screenManager != null) screenManager.compositeAndRenderContents(screen, graphics);
+    }
+
+    public static boolean shouldCancelVanillaScreenBlur(Screen screen) {
+        return screenManager != null && screenManager.shouldCancelVanillaScreenBlur(screen);
     }
 
     public static LiquidGlassConfigManager configManager() {

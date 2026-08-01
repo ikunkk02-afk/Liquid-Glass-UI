@@ -2,9 +2,12 @@ package io.github.ikunkk02afk.liquidglassui.config;
 
 public enum GlassDebugView {
     OFF,
-    SOLID_MASK,
+    SDF_DISTANCE,
+    SDF_NORMAL,
+    GROUP_ID,
     RAW_CAPTURE,
     RAW_BLUR,
-    UV_GRID,
+    REFRACTION_ONLY,
+    FRESNEL_ONLY,
     FINAL_COMPOSITE
 }

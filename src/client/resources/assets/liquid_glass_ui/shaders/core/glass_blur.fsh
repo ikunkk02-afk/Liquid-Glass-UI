@@ -2,18 +2,19 @@
 
 uniform sampler2D Sampler0;
 uniform vec2 TexelSize;
-uniform vec2 Direction;
-uniform float Radius;
+uniform float Offset;
 
 in vec2 texCoord;
 out vec4 fragColor;
 
 void main() {
-    vec2 offset = Direction * TexelSize * max(1.0, Radius);
-    vec4 color = texture(Sampler0, texCoord) * 0.30;
-    color += texture(Sampler0, texCoord + offset * 0.75) * 0.24;
-    color += texture(Sampler0, texCoord - offset * 0.75) * 0.24;
-    color += texture(Sampler0, texCoord + offset * 1.75) * 0.11;
-    color += texture(Sampler0, texCoord - offset * 1.75) * 0.11;
+    vec2 halfTexel = TexelSize * 0.5;
+    vec2 uv = clamp(texCoord, halfTexel, vec2(1.0) - halfTexel);
+    vec2 stepUv = TexelSize * Offset;
+    vec4 color = texture(Sampler0, uv) * 0.20;
+    color += texture(Sampler0, clamp(uv + stepUv, halfTexel, vec2(1.0) - halfTexel)) * 0.20;
+    color += texture(Sampler0, clamp(uv + vec2(-stepUv.x, stepUv.y), halfTexel, vec2(1.0) - halfTexel)) * 0.20;
+    color += texture(Sampler0, clamp(uv + vec2(stepUv.x, -stepUv.y), halfTexel, vec2(1.0) - halfTexel)) * 0.20;
+    color += texture(Sampler0, clamp(uv - stepUv, halfTexel, vec2(1.0) - halfTexel)) * 0.20;
     fragColor = color;
 }

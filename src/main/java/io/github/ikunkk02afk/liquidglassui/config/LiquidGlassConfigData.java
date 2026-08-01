@@ -3,12 +3,13 @@ package io.github.ikunkk02afk.liquidglassui.config;
 import java.util.Locale;
 
 public final class LiquidGlassConfigData {
-    public static final int CURRENT_SCHEMA_VERSION = 1;
+    public static final int CURRENT_SCHEMA_VERSION = 2;
 
     public int schemaVersion = CURRENT_SCHEMA_VERSION;
     public Appearance appearance = new Appearance();
     public Optics optics = new Optics();
     public Animation animation = new Animation();
+    public Fusion fusion = new Fusion();
     public InterfaceOptions ui = new InterfaceOptions();
     public Performance performance = new Performance();
     public boolean highQualityWarningAcknowledged;
@@ -29,6 +30,7 @@ public final class LiquidGlassConfigData {
         copy.appearance = appearance == null ? null : appearance.copy();
         copy.optics = optics == null ? null : optics.copy();
         copy.animation = animation == null ? null : animation.copy();
+        copy.fusion = fusion == null ? null : fusion.copy();
         copy.ui = ui == null ? null : ui.copy();
         copy.performance = performance == null ? null : performance.copy();
         copy.highQualityWarningAcknowledged = highQualityWarningAcknowledged;
@@ -40,11 +42,13 @@ public final class LiquidGlassConfigData {
         if (appearance == null) appearance = new Appearance();
         if (optics == null) optics = new Optics();
         if (animation == null) animation = new Animation();
+        if (fusion == null) fusion = new Fusion();
         if (ui == null) ui = new InterfaceOptions();
         if (performance == null) performance = new Performance();
         appearance.sanitize();
         optics.sanitize();
         animation.sanitize();
+        fusion.sanitize();
         performance.sanitize();
     }
 
@@ -60,7 +64,7 @@ public final class LiquidGlassConfigData {
     public static final class Appearance {
         public boolean enabled = true;
         public String mainColor = "#DDE7F2";
-        public float opacity = 0.22f;
+        public float opacity = 0.10f;
         public float tintIntensity = 0.10f;
         public float cornerRadius = 9.0f;
         public float edgeWidth = 0.65f;
@@ -102,6 +106,11 @@ public final class LiquidGlassConfigData {
         public float mouseHighlightIntensity = 0.20f;
         public float mouseHighlightRange = 0.78f;
         public float surfaceNoiseIntensity = 0.008f;
+        public float glassThickness = 5.5f;
+        public float fresnelStrength = 0.32f;
+        public float dispersionStrength = 0.65f;
+        public float shadowStrength = 0.18f;
+        public float backgroundClarity = 0.62f;
 
         private Optics copy() {
             Optics copy = new Optics();
@@ -112,6 +121,11 @@ public final class LiquidGlassConfigData {
             copy.mouseHighlightIntensity = mouseHighlightIntensity;
             copy.mouseHighlightRange = mouseHighlightRange;
             copy.surfaceNoiseIntensity = surfaceNoiseIntensity;
+            copy.glassThickness = glassThickness;
+            copy.fresnelStrength = fresnelStrength;
+            copy.dispersionStrength = dispersionStrength;
+            copy.shadowStrength = shadowStrength;
+            copy.backgroundClarity = backgroundClarity;
             return copy;
         }
 
@@ -123,6 +137,38 @@ public final class LiquidGlassConfigData {
             mouseHighlightIntensity = clamp(mouseHighlightIntensity, 0.0f, 1.0f);
             mouseHighlightRange = clamp(mouseHighlightRange, 0.0f, 1.0f);
             surfaceNoiseIntensity = clamp(surfaceNoiseIntensity, 0.0f, 1.0f);
+            glassThickness = clamp(glassThickness, 0.5f, 16.0f);
+            fresnelStrength = clamp(fresnelStrength, 0.0f, 1.0f);
+            dispersionStrength = clamp(dispersionStrength, 0.0f, 2.0f);
+            shadowStrength = clamp(shadowStrength, 0.0f, 1.0f);
+            backgroundClarity = clamp(backgroundClarity, 0.0f, 1.0f);
+        }
+    }
+
+    public static final class Fusion {
+        public boolean enabled = true;
+        public float distance = 32.0f;
+        public float softness = 8.0f;
+        public float hoverExpansion = 1.5f;
+        public float connectionDurationSeconds = 0.18f;
+        public boolean staticConnection;
+
+        private Fusion copy() {
+            Fusion copy = new Fusion();
+            copy.enabled = enabled;
+            copy.distance = distance;
+            copy.softness = softness;
+            copy.hoverExpansion = hoverExpansion;
+            copy.connectionDurationSeconds = connectionDurationSeconds;
+            copy.staticConnection = staticConnection;
+            return copy;
+        }
+
+        private void sanitize() {
+            distance = clamp(distance, 0.0f, 64.0f);
+            softness = clamp(softness, 0.0f, 24.0f);
+            hoverExpansion = clamp(hoverExpansion, 0.0f, 4.0f);
+            connectionDurationSeconds = clamp(connectionDurationSeconds, 0.05f, 0.6f);
         }
     }
 
@@ -180,9 +226,10 @@ public final class LiquidGlassConfigData {
     public static final class Performance {
         public GlassQualityPreset preset = GlassQualityPreset.MEDIUM;
         public float customBufferScale = 0.5f;
-        public int customBlurPasses = 3;
+        public int customBlurPasses = 4;
         public GlassRefractionQuality customRefractionQuality = GlassRefractionQuality.LOW;
         public int customSampleCount = 4;
+        public int maxGlassComponents = 64;
         public GlassDebugView debugView = GlassDebugView.OFF;
 
         private Performance copy() {
@@ -192,6 +239,7 @@ public final class LiquidGlassConfigData {
             copy.customBlurPasses = customBlurPasses;
             copy.customRefractionQuality = customRefractionQuality;
             copy.customSampleCount = customSampleCount;
+            copy.maxGlassComponents = maxGlassComponents;
             copy.debugView = debugView;
             return copy;
         }
@@ -206,8 +254,9 @@ public final class LiquidGlassConfigData {
                 if (Math.abs(customBufferScale - option) < Math.abs(customBufferScale - nearest)) nearest = option;
             }
             customBufferScale = nearest;
-            customBlurPasses = clamp(customBlurPasses, 1, 5);
+            customBlurPasses = clamp(customBlurPasses, 1, 6);
             customSampleCount = clamp(customSampleCount, 2, 12);
+            maxGlassComponents = clamp(maxGlassComponents, 8, 64);
         }
     }
 }

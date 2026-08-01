@@ -2,6 +2,9 @@ package io.github.ikunkk02afk.liquidglassui.render;
 
 import io.github.ikunkk02afk.liquidglassui.config.GlassRefractionQuality;
 import io.github.ikunkk02afk.liquidglassui.config.LiquidGlassConfigData;
+import io.github.ikunkk02afk.liquidglassui.render.frame.GlassFrameCollector;
+import io.github.ikunkk02afk.liquidglassui.render.frame.GlassWidgetData;
+import io.github.ikunkk02afk.liquidglassui.render.frame.GlassWidgetTexturePacker;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,12 +15,14 @@ class GlassRenderCoreTest {
     @Test
     void presetsProduceExpectedBudgets() {
         LiquidGlassConfigData data = LiquidGlassConfigData.defaults();
-        assertEquals(new GlassQualityBudget(0.5f, 3, GlassRefractionQuality.LOW, 4), GlassQualityBudget.from(data));
+        assertEquals(new GlassQualityBudget(0.5f, 4, GlassRefractionQuality.LOW, 4), GlassQualityBudget.from(data));
         data.performance.preset = io.github.ikunkk02afk.liquidglassui.config.GlassQualityPreset.LOW;
         assertEquals(0.25f, GlassQualityBudget.from(data).bufferScale());
         assertFalse(GlassQualityBudget.from(data).dynamicRefraction());
         data.performance.preset = io.github.ikunkk02afk.liquidglassui.config.GlassQualityPreset.HIGH;
-        assertEquals(5, GlassQualityBudget.from(data).blurPasses());
+        assertEquals(6, GlassQualityBudget.from(data).blurPasses());
+        assertEquals(1440, GlassQualityBudget.from(data).targetWidth(1920));
+        assertEquals(810, GlassQualityBudget.from(data).targetHeight(1080));
         assertEquals(8, GlassQualityBudget.from(data).sampleCount());
     }
 
@@ -53,5 +58,37 @@ class GlassRenderCoreTest {
         assertEquals(1080.0f / 479.0f, mapper.scaleY(), 0.00001f);
         assertEquals(0.5f, mapper.textureU(426.5f), 0.00001f);
         assertEquals(0.5f, mapper.textureV(239.5f), 0.00001f);
+    }
+
+    @Test
+    void collectorLocksCapacityAndReportsOverflow() {
+        GlassFrameCollector collector = new GlassFrameCollector();
+        collector.begin(41, 2);
+        assertNotNull(collector.add());
+        assertNotNull(collector.add());
+        assertNull(collector.add());
+        assertEquals(2, collector.freeze().widgetCount());
+        assertTrue(collector.freeze().overflowed());
+    }
+
+    @Test
+    void dataTexturePackerAppliesNonIntegerScaleAndSingleYFlip() {
+        GlassFrameCollector collector = new GlassFrameCollector();
+        collector.begin(7, 64);
+        GlassWidgetData widget = collector.add();
+        assertNotNull(widget);
+        widget.x = 100.0f;
+        widget.y = 50.0f;
+        widget.width = 200.0f;
+        widget.height = 20.0f;
+        widget.cornerRadius = 8.0f;
+        GlassFrameContext frame = new GlassFrameContext(7, 853, 479, 1920, 1080,
+                2.25, 426.5f, 239.5f, new GlassQualityBudget(0.5f, 4, GlassRefractionQuality.LOW, 4));
+        float[] packed = new GlassWidgetTexturePacker().pack(collector.freeze(), frame);
+
+        assertEquals(100.0f * 1920.0f / 853.0f, packed[0], 0.0001f);
+        assertEquals(1080.0f - 70.0f * 1080.0f / 479.0f, packed[1], 0.0001f);
+        assertEquals(200.0f * 1920.0f / 853.0f, packed[2], 0.0001f);
+        assertEquals(20.0f * 1080.0f / 479.0f, packed[3], 0.0001f);
     }
 }

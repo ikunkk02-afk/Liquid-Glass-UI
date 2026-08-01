@@ -6,7 +6,6 @@
   ],
   "uniforms": [
     { "name": "TexelSize", "type": "float", "count": 2, "values": [ 0.001, 0.001 ] },
-    { "name": "Direction", "type": "float", "count": 2, "values": [ 1.0, 0.0 ] },
-    { "name": "Radius", "type": "float", "count": 1, "values": [ 4.0 ] }
+    { "name": "Offset", "type": "float", "count": 1, "values": [ 1.0 ] }
   ]
 }

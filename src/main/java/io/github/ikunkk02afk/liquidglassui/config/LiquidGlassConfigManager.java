@@ -2,7 +2,10 @@ package io.github.ikunkk02afk.liquidglassui.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -40,7 +43,9 @@ public final class LiquidGlassConfigManager {
         try {
             LiquidGlassConfigData loaded;
             try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-                loaded = GSON.fromJson(reader, LiquidGlassConfigData.class);
+                JsonElement root = JsonParser.parseReader(reader);
+                migrateLegacyDebugView(root);
+                loaded = GSON.fromJson(root, LiquidGlassConfigData.class);
             }
             if (loaded == null) throw new JsonParseException("Configuration root is null");
             loaded.sanitize();
@@ -53,6 +58,14 @@ public final class LiquidGlassConfigManager {
             saveInternal(current);
         }
         return current.copy();
+    }
+
+    private static void migrateLegacyDebugView(JsonElement root) {
+        if (!root.isJsonObject()) return;
+        JsonObject performance = root.getAsJsonObject().getAsJsonObject("performance");
+        if (performance == null || !performance.has("debugView") || !performance.get("debugView").isJsonPrimitive()) return;
+        String value = performance.get("debugView").getAsString();
+        if ("SOLID_MASK".equals(value) || "UV_GRID".equals(value)) performance.addProperty("debugView", "OFF");
     }
 
     public synchronized LiquidGlassConfigData get() {

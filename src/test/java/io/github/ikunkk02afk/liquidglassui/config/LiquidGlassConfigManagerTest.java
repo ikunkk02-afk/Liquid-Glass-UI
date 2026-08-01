@@ -23,7 +23,8 @@ class LiquidGlassConfigManagerTest {
         assertTrue(Files.isRegularFile(file));
         assertEquals(GlassQualityPreset.MEDIUM, data.performance.preset);
         assertEquals("#DDE7F2", data.appearance.mainColor);
-        assertEquals(0.22f, data.appearance.opacity);
+        assertEquals(0.10f, data.appearance.opacity);
+        assertEquals(2, data.schemaVersion);
         assertFalse(data.highQualityWarningAcknowledged);
     }
 
@@ -36,10 +37,24 @@ class LiquidGlassConfigManagerTest {
         assertEquals(1.0f, data.appearance.opacity);
         assertEquals(2.0f, data.appearance.cornerRadius);
         assertEquals(0.75f, data.performance.customBufferScale);
-        assertEquals(5, data.performance.customBlurPasses);
+        assertEquals(6, data.performance.customBlurPasses);
         assertEquals(2, data.performance.customSampleCount);
         assertNotNull(data.optics);
         assertNotNull(data.animation);
+        assertNotNull(data.fusion);
+    }
+
+    @Test
+    void migratesSchemaOneAndRemovedDebugModes() throws IOException {
+        Path file = directory.resolve("liquid_glass_ui.json");
+        Files.writeString(file, "{\"schemaVersion\":1,\"optics\":{\"blurRadius\":9},"
+                + "\"performance\":{\"debugView\":\"SOLID_MASK\"}}", StandardCharsets.UTF_8);
+        LiquidGlassConfigData data = manager(file).load();
+
+        assertEquals(2, data.schemaVersion);
+        assertEquals(9.0f, data.optics.blurRadius);
+        assertEquals(GlassDebugView.OFF, data.performance.debugView);
+        assertEquals(32.0f, data.fusion.distance);
     }
 
     @Test
