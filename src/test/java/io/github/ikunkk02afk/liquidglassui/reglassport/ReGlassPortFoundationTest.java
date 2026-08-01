@@ -7,6 +7,10 @@ import io.github.ikunkk02afk.liquidglassui.reglassport.render.ReGlassFrameCollec
 import io.github.ikunkk02afk.liquidglassui.reglassport.render.ReGlassUniformData;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,6 +56,27 @@ final class ReGlassPortFoundationTest {
         }
         assertFalse(collector.submit(widget(999L, 20.0f, 10.0f)));
         assertEquals(ReGlassFrameCollector.MAX_WIDGETS, collector.finishFrame().size());
+    }
+
+    @Test
+    void shaderResourcesKeepRequiredSdfAndOpticalStages() throws IOException {
+        Path shaderRoot = Path.of("src/client/resources/assets/liquid_glass_ui/shaders/core/reglass_port");
+        String composite = Files.readString(shaderRoot.resolve("liquid_glass_gui.fsh"));
+        String blur = Files.readString(shaderRoot.resolve("blur.fsh"));
+
+        for (String required : new String[]{"struct SDFResult", "sdgBox", "opSmoothUnion", "opHardUnion",
+                "opHardSubtract", "fieldWidgets", "sampleBlur", "refractionOffset", "dispersed",
+                "fresnelFactor", "glareDirection", "applyShadows"}) {
+            assertTrue(composite.contains(required), () -> "missing shader stage " + required);
+        }
+        for (int mode = 1; mode <= 6; mode++) {
+            assertTrue(composite.contains("DebugMode == " + mode));
+        }
+        assertTrue(composite.contains("uniform sampler2D RawSampler"));
+        assertTrue(composite.contains("uniform sampler2D WidgetDataSampler"));
+        assertTrue(blur.contains("uniform float Weights[65]"));
+        assertTrue(blur.contains("Direction / OutSize"));
+        assertFalse(blur.contains("0.25 * ("), "old four-corner average blur must not return");
     }
 
     private static ReGlassUniformData widget(long id, float width, float height) {

@@ -13,6 +13,7 @@ public final class ReGlassLegacyRenderer implements AutoCloseable {
     private final Logger logger;
     private final ReGlassShaderManager shaders;
     private final ReGlassFramebufferManager framebuffers = new ReGlassFramebufferManager();
+    private final ReGlassBlurRuntime blur = new ReGlassBlurRuntime();
     private final ReGlassCompositePass composite = new ReGlassCompositePass();
     private int screenWidth;
     private int screenHeight;
@@ -68,9 +69,11 @@ public final class ReGlassLegacyRenderer implements AutoCloseable {
     public boolean composite(List<ReGlassUniformData> widgets, int debugMode) {
         if (!available() || !captured || widgets.isEmpty()) return false;
         try (ReGlassRenderStateGuard ignored = ReGlassRenderStateGuard.capture()) {
+            int rawTexture = framebuffers.capture().getColorTextureId();
+            ReGlassBlurRuntime.Result blurResult = blur.render(shaders.blur(), framebuffers, widgets, rawTexture);
             composite.draw(shaders.composite(), widgets, screenWidth, screenHeight,
-                    framebufferWidth, framebufferHeight, framebuffers.capture().getColorTextureId(), debugMode);
-            metrics = new Metrics(metrics.captureCount(), 0, 1, widgets.size());
+                    framebufferWidth, framebufferHeight, rawTexture, blurResult.levels(), debugMode);
+            metrics = new Metrics(metrics.captureCount(), blurResult.passCount(), 1, widgets.size());
             return true;
         } catch (Throwable throwable) {
             fail("component upload or composite", throwable);

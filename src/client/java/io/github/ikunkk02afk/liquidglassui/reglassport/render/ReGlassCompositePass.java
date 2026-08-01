@@ -41,17 +41,27 @@ public final class ReGlassCompositePass implements AutoCloseable {
 
     public void draw(ShaderInstance shader, List<ReGlassUniformData> widgets,
                      int screenWidth, int screenHeight, int framebufferWidth, int framebufferHeight,
-                     int rawTexture, int debugMode) {
+                     int rawTexture, List<ReGlassBlurRuntime.BlurLevel> blurLevels, int debugMode) {
         if (widgets.isEmpty()) return;
-        upload(widgets, screenWidth, screenHeight, framebufferWidth, framebufferHeight);
+        upload(widgets, blurLevels, screenWidth, screenHeight, framebufferWidth, framebufferHeight);
         RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
         main.bindWrite(true);
         RenderSystem.viewport(0, 0, main.viewWidth, main.viewHeight);
         bindSampler(shader, "RawSampler", 0, rawTexture);
-        bindSampler(shader, "WidgetDataSampler", 1, dataTexture);
+        for (int index = 0; index < ReGlassBlurRuntime.MAX_LEVELS; index++) {
+            int texture = index < blurLevels.size() ? blurLevels.get(index).textureId() : rawTexture;
+            bindSampler(shader, "BlurSampler" + index, index + 1, texture);
+        }
+        bindSampler(shader, "WidgetDataSampler", 6, dataTexture);
         set(shader, "FramebufferSize", framebufferWidth, framebufferHeight);
         setInteger(shader, "WidgetCount", widgets.size());
         setInteger(shader, "DebugMode", debugMode);
+        setFloat(shader, "Time", (System.nanoTime() & 0xFFFFFFFL) / 1_000_000_000.0f);
+        setFloat(shader, "HoverScalePx", GlassPortConfig.DEFAULTS.hoverScalePx * framebufferHeight / Math.max(1.0f, screenHeight));
+        setFloat(shader, "FocusScalePx", GlassPortConfig.DEFAULTS.focusScalePx * framebufferHeight / Math.max(1.0f, screenHeight));
+        setFloat(shader, "FocusBorderWidthPx", GlassPortConfig.DEFAULTS.focusBorderWidthPx * framebufferHeight / Math.max(1.0f, screenHeight));
+        setFloat(shader, "FocusBorderIntensity", GlassPortConfig.DEFAULTS.focusBorderIntensity);
+        setFloat(shader, "FocusBorderSpeed", GlassPortConfig.DEFAULTS.focusBorderSpeed);
         RenderSystem.disableBlend();
         RenderSystem.disableDepthTest();
         RenderSystem.disableScissor();
@@ -62,7 +72,8 @@ public final class ReGlassCompositePass implements AutoCloseable {
         drawFullscreenQuad();
     }
 
-    private void upload(List<ReGlassUniformData> widgets, int screenWidth, int screenHeight,
+    private void upload(List<ReGlassUniformData> widgets, List<ReGlassBlurRuntime.BlurLevel> blurLevels,
+                        int screenWidth, int screenHeight,
                         int framebufferWidth, int framebufferHeight) {
         ensureDataTexture();
         java.util.Arrays.fill(packed, 0.0f);
@@ -99,8 +110,9 @@ public final class ReGlassCompositePass implements AutoCloseable {
                     style.shadowOffsetX(defaults) * scaleX, style.shadowOffsetY(defaults) * scaleY);
             int shadow = style.shadowColor(defaults);
             put(column, 9, red(shadow), green(shadow), blue(shadow), style.shadowColorAlpha(defaults));
-            put(column, 10, widget.hover(), widget.focus(), widget.press(), seed(widget.stableId()));
-            put(column, 11, 0.0f, 0.0f, 0.0f, 1.0f);
+            put(column, 10, blurIndex(style.blurRadius(defaults), blurLevels),
+                    widget.hover(), widget.focus(), widget.press());
+            put(column, 11, seed(widget.stableId()), 0.0f, 0.0f, 1.0f);
         }
         upload.clear();
         upload.put(packed).flip();
@@ -163,6 +175,11 @@ public final class ReGlassCompositePass implements AutoCloseable {
         if (uniform != null) uniform.set(value);
     }
 
+    private static void setFloat(ShaderInstance shader, String name, float value) {
+        Uniform uniform = shader.getUniform(name);
+        if (uniform != null) uniform.set(value);
+    }
+
     private static void resetPixelUnpackState() {
         GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 4);
         GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, 0);
@@ -178,6 +195,20 @@ public final class ReGlassCompositePass implements AutoCloseable {
         mixed *= 0xff51afd7ed558ccdl;
         mixed ^= mixed >>> 33;
         return (mixed & 0xFFFFFFL) / (float) 0x1000000;
+    }
+
+    private static int blurIndex(int radius, List<ReGlassBlurRuntime.BlurLevel> levels) {
+        if (levels.isEmpty()) return 0;
+        int best = 0;
+        int bestDistance = Integer.MAX_VALUE;
+        for (int index = 0; index < levels.size(); index++) {
+            int distance = Math.abs(levels.get(index).radius() - radius);
+            if (distance < bestDistance) {
+                best = index;
+                bestDistance = distance;
+            }
+        }
+        return best;
     }
 
     @Override

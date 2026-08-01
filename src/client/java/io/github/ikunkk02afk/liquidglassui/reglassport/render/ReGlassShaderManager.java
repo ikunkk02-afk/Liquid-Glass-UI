@@ -12,6 +12,7 @@ import java.io.IOException;
 public final class ReGlassShaderManager {
     private final Logger logger;
     private ShaderInstance composite;
+    private ShaderInstance blur;
     private int generation;
     private boolean failureLogged;
 
@@ -22,6 +23,13 @@ public final class ReGlassShaderManager {
     public void register(Runnable reloadListener) {
         CoreShaderRegistrationCallback.EVENT.register(context -> {
             try {
+                context.register(ResourceLocation.fromNamespaceAndPath("liquid_glass_ui", "reglass_port/blur"),
+                        DefaultVertexFormat.POSITION, shader -> {
+                            blur = shader;
+                            generation++;
+                            failureLogged = false;
+                            reloadListener.run();
+                        });
                 context.register(ResourceLocation.fromNamespaceAndPath("liquid_glass_ui", "reglass_port/liquid_glass_gui"),
                         DefaultVertexFormat.POSITION, shader -> {
                             composite = shader;
@@ -31,6 +39,7 @@ public final class ReGlassShaderManager {
                         });
             } catch (IOException | RuntimeException exception) {
                 composite = null;
+                blur = null;
                 generation++;
                 if (!failureLogged) {
                     failureLogged = true;
@@ -41,7 +50,8 @@ public final class ReGlassShaderManager {
         });
     }
 
-    public boolean ready() { return composite != null; }
+    public boolean ready() { return composite != null && blur != null; }
     public ShaderInstance composite() { return composite; }
+    public ShaderInstance blur() { return blur; }
     public int generation() { return generation; }
 }

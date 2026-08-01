@@ -20,7 +20,9 @@ The following files contain code adapted from ReGlass's API, widget data model, 
 - `src/client/java/io/github/ikunkk02afk/liquidglassui/reglassport/api/ReGlassPortApi.java`
 - `src/client/java/io/github/ikunkk02afk/liquidglassui/reglassport/widget/LiquidGlassPortWidget.java`
 - `src/client/java/io/github/ikunkk02afk/liquidglassui/reglassport/render/ReGlassCompositePass.java`
+- `src/client/java/io/github/ikunkk02afk/liquidglassui/reglassport/render/ReGlassBlurRuntime.java`
 - `src/client/resources/assets/liquid_glass_ui/shaders/core/reglass_port/blit_fullscreen.vsh`
+- `src/client/resources/assets/liquid_glass_ui/shaders/core/reglass_port/blur.fsh`
 - `src/client/resources/assets/liquid_glass_ui/shaders/core/reglass_port/liquid_glass_gui.fsh`
 
 The following 1.21.1 integration files are original compatibility implementations rather than copied upstream code:

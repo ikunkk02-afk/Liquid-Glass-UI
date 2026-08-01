@@ -3,11 +3,22 @@
   "fragment": "liquid_glass_ui:reglass_port/liquid_glass_gui",
   "samplers": [
     { "name": "RawSampler" },
+    { "name": "BlurSampler0" },
+    { "name": "BlurSampler1" },
+    { "name": "BlurSampler2" },
+    { "name": "BlurSampler3" },
+    { "name": "BlurSampler4" },
     { "name": "WidgetDataSampler" }
   ],
   "uniforms": [
     { "name": "FramebufferSize", "type": "float", "count": 2, "values": [ 1920.0, 1080.0 ] },
     { "name": "WidgetCount", "type": "int", "count": 1, "values": [ 0 ] },
-    { "name": "DebugMode", "type": "int", "count": 1, "values": [ 0 ] }
+    { "name": "DebugMode", "type": "int", "count": 1, "values": [ 0 ] },
+    { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "HoverScalePx", "type": "float", "count": 1, "values": [ 1.5 ] },
+    { "name": "FocusScalePx", "type": "float", "count": 1, "values": [ 2.5 ] },
+    { "name": "FocusBorderWidthPx", "type": "float", "count": 1, "values": [ 2.0 ] },
+    { "name": "FocusBorderIntensity", "type": "float", "count": 1, "values": [ 0.75 ] },
+    { "name": "FocusBorderSpeed", "type": "float", "count": 1, "values": [ 1.6 ] }
   ]
 }

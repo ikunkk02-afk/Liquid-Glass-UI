@@ -26,6 +26,7 @@ public final class ReGlassPortClient {
     private static Logger logger;
     private static Screen activeScreen;
     private static long nextWarningNanos;
+    private static boolean metricsLogged;
 
     private ReGlassPortClient() {
     }
@@ -42,7 +43,7 @@ public final class ReGlassPortClient {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openPlayground.consumeClick()) {
                 if (!(client.screen instanceof ReGlassPlaygroundScreen)) {
-                    client.setScreen(new ReGlassPlaygroundScreen(client.screen));
+                    openPlayground(client.screen);
                 }
             }
         });
@@ -74,6 +75,13 @@ public final class ReGlassPortClient {
         List<ReGlassUniformData> widgets = COLLECTOR.finishFrame();
         boolean compositeRendered = renderer.composite(widgets, debugMode);
         for (LiquidGlassPortWidget widget : DEFERRED) widget.renderDeferred(graphics, compositeRendered);
+        if (!metricsLogged && compositeRendered && logger != null) {
+            ReGlassLegacyRenderer.Metrics metrics = renderer.metrics();
+            logger.info("ReGlass Port frame metrics: capture={}, blurPasses={}, composite={}, widgets={}, debugMode={}",
+                    metrics.captureCount(), metrics.blurPassCount(), metrics.compositeCount(),
+                    metrics.widgetCount(), debugMode);
+            metricsLogged = true;
+        }
         activeScreen = null;
         DEFERRED.clear();
     }
@@ -83,6 +91,7 @@ public final class ReGlassPortClient {
     }
 
     public static void openPlayground(Screen parent) {
+        metricsLogged = false;
         Minecraft.getInstance().setScreen(new ReGlassPlaygroundScreen(parent));
     }
 

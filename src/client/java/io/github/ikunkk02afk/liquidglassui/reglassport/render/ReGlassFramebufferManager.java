@@ -8,9 +8,14 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /** Independent 1.21.1 render-target lifecycle for the port. */
 public final class ReGlassFramebufferManager implements AutoCloseable {
     private TextureTarget capture;
+    private TextureTarget blurTemporary;
+    private final Map<Integer, TextureTarget> blurredByRadius = new HashMap<>();
     private int width = -1;
     private int height = -1;
     private int generation = -1;
@@ -23,6 +28,7 @@ public final class ReGlassFramebufferManager implements AutoCloseable {
         height = framebufferHeight;
         generation = resourceGeneration;
         capture = create(framebufferWidth, framebufferHeight);
+        blurTemporary = create(framebufferWidth, framebufferHeight);
     }
 
     private static TextureTarget create(int width, int height) {
@@ -48,6 +54,12 @@ public final class ReGlassFramebufferManager implements AutoCloseable {
 
     public TextureTarget capture() { return capture; }
 
+    public TextureTarget blurTemporary() { return blurTemporary; }
+
+    public TextureTarget blurOutput(int radius) {
+        return blurredByRadius.computeIfAbsent(radius, ignored -> create(width, height));
+    }
+
     public void restoreMainTarget() {
         RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
         main.bindWrite(true);
@@ -59,7 +71,11 @@ public final class ReGlassFramebufferManager implements AutoCloseable {
     @Override
     public void close() {
         if (capture != null) capture.destroyBuffers();
+        if (blurTemporary != null) blurTemporary.destroyBuffers();
+        for (TextureTarget target : blurredByRadius.values()) target.destroyBuffers();
+        blurredByRadius.clear();
         capture = null;
+        blurTemporary = null;
         width = height = generation = -1;
     }
 }

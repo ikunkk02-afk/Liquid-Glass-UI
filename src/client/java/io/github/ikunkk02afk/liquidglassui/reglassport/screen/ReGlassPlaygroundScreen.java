@@ -6,11 +6,13 @@ import io.github.ikunkk02afk.liquidglassui.reglassport.widget.LiquidGlassPortWid
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import org.lwjgl.glfw.GLFW;
 
 /** Isolated visual test surface; menu rendering is intentionally untouched. */
 public final class ReGlassPlaygroundScreen extends Screen {
     private final Screen parent;
     private LiquidGlassPortWidget sample;
+    private int debugMode;
 
     public ReGlassPlaygroundScreen(Screen parent) {
         super(Component.translatable("liquid_glass_ui.reglass_port.playground.title"));
@@ -34,12 +36,26 @@ public final class ReGlassPlaygroundScreen extends Screen {
         drawReferenceBackground(graphics);
         ReGlassPortClient.beginFrame(this, graphics);
         super.render(graphics, mouseX, mouseY, delta);
-        ReGlassPortClient.finishFrame(this, graphics, 0);
+        ReGlassPortClient.finishFrame(this, graphics, debugMode);
 
-        graphics.drawCenteredString(font, title, width / 2, 18, 0xFFFFFFFF);
+        graphics.drawCenteredString(font, title.copy().append("  [").append(debugLabel()).append("]"),
+                width / 2, 18, 0xFFFFFFFF);
         graphics.drawCenteredString(font,
                 Component.translatable("liquid_glass_ui.reglass_port.playground.instructions"),
                 width / 2, height - 18, 0xFFE8EDF4);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_0 || keyCode == GLFW.GLFW_KEY_KP_0) debugMode = 0;
+        else if (keyCode >= GLFW.GLFW_KEY_1 && keyCode <= GLFW.GLFW_KEY_6) debugMode = keyCode - GLFW.GLFW_KEY_0;
+        else if (keyCode >= GLFW.GLFW_KEY_KP_1 && keyCode <= GLFW.GLFW_KEY_KP_6) debugMode = keyCode - GLFW.GLFW_KEY_KP_0;
+        else return super.keyPressed(keyCode, scanCode, modifiers);
+        return true;
+    }
+
+    private Component debugLabel() {
+        return Component.translatable("liquid_glass_ui.reglass_port.debug." + debugMode);
     }
 
     private void drawReferenceBackground(GuiGraphics graphics) {
