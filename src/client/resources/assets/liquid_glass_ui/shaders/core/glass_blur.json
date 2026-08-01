@@ -1,0 +1,12 @@
+{
+  "vertex": "liquid_glass_ui:fullscreen",
+  "fragment": "liquid_glass_ui:glass_blur",
+  "samplers": [
+    { "name": "Sampler0" }
+  ],
+  "uniforms": [
+    { "name": "TexelSize", "type": "float", "count": 2, "values": [ 0.001, 0.001 ] },
+    { "name": "Direction", "type": "float", "count": 2, "values": [ 1.0, 0.0 ] },
+    { "name": "Radius", "type": "float", "count": 1, "values": [ 4.0 ] }
+  ]
+}

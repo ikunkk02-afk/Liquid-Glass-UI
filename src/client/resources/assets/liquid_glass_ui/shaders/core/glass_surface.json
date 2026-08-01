@@ -1,0 +1,28 @@
+{
+  "vertex": "liquid_glass_ui:glass_surface",
+  "fragment": "liquid_glass_ui:glass_surface",
+  "samplers": [
+    { "name": "Sampler0" }
+  ],
+  "uniforms": [
+    { "name": "GuiSize", "type": "float", "count": 2, "values": [ 320.0, 240.0 ] },
+    { "name": "Rect", "type": "float", "count": 4, "values": [ 0.0, 0.0, 100.0, 20.0 ] },
+    { "name": "PreviousRect", "type": "float", "count": 4, "values": [ 0.0, 0.0, 100.0, 20.0 ] },
+    { "name": "CornerRadius", "type": "float", "count": 1, "values": [ 8.0 ] },
+    { "name": "Merge", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "Opacity", "type": "float", "count": 1, "values": [ 0.42 ] },
+    { "name": "Tint", "type": "float", "count": 3, "values": [ 0.86, 0.91, 0.95 ] },
+    { "name": "TintIntensity", "type": "float", "count": 1, "values": [ 0.18 ] },
+    { "name": "EdgeWidth", "type": "float", "count": 1, "values": [ 0.85 ] },
+    { "name": "EdgeHighlight", "type": "float", "count": 1, "values": [ 0.55 ] },
+    { "name": "InnerShadow", "type": "float", "count": 1, "values": [ 0.32 ] },
+    { "name": "MouseHighlight", "type": "float", "count": 1, "values": [ 0.42 ] },
+    { "name": "MouseRange", "type": "float", "count": 1, "values": [ 0.65 ] },
+    { "name": "Refraction", "type": "float", "count": 1, "values": [ 0.08 ] },
+    { "name": "RefractionRange", "type": "float", "count": 1, "values": [ 0.28 ] },
+    { "name": "SampleCount", "type": "int", "count": 1, "values": [ 4 ] },
+    { "name": "Noise", "type": "float", "count": 1, "values": [ 0.025 ] },
+    { "name": "AdaptBrightness", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "HighlightPosition", "type": "float", "count": 2, "values": [ 0.5, 0.5 ] }
+  ]
+}

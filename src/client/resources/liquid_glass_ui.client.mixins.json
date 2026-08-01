@@ -1,9 +1,9 @@
 {
 	"required": true,
-	"package": "io.github.ikunkk02afk.liquidglassui.client.mixin",
+	"package": "io.github.ikunkk02afk.liquidglassui.mixin.client",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"ExampleClientMixin"
+		"AbstractWidgetMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

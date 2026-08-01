@@ -2,31 +2,25 @@
 	"schemaVersion": 1,
 	"id": "liquid_glass_ui",
 	"version": "${version}",
-	"name": "liquid_glass_ui",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Liquid Glass UI",
+	"description": "A client-side liquid glass treatment for Minecraft menu buttons.",
 	"authors": [
-		"Me!"
+		"ikunkk02-afk"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/ikunkk02-afk/Liquid-Glass-UI",
+		"sources": "https://github.com/ikunkk02-afk/Liquid-Glass-UI",
+		"issues": "https://github.com/ikunkk02-afk/Liquid-Glass-UI/issues"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/liquid_glass_ui/icon.png",
 	"environment": "client",
 	"entrypoints": {
-		"main": [
-			"io.github.ikunkk02afk.liquidglassui.Liquid_glass_ui"
-		],
 		"client": [
-			"io.github.ikunkk02afk.liquidglassui.client.Liquid_glass_uiClient"
-		],
-		"fabric-datagen": [
-			"io.github.ikunkk02afk.liquidglassui.client.Liquid_glass_uiDataGenerator"
+			"io.github.ikunkk02afk.liquidglassui.LiquidGlassUIClient"
 		]
 	},
 	"mixins": [
-		"liquid_glass_ui.mixins.json",
 		{
 			"config": "liquid_glass_ui.client.mixins.json",
 			"environment": "client"
