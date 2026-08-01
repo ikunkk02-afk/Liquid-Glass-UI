@@ -1,0 +1,13 @@
+{
+  "vertex": "reglass:blit_fullscreen",
+  "fragment": "reglass:liquid_glass_gui",
+  "samplers": [
+    { "name": "Sampler0" },
+    { "name": "Sampler1" },
+    { "name": "Sampler2" },
+    { "name": "Sampler3" },
+    { "name": "Sampler4" },
+    { "name": "Sampler5" }
+  ],
+  "uniforms": []
+}

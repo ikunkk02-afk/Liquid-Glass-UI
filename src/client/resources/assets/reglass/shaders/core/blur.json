@@ -1,0 +1,8 @@
+{
+  "vertex": "reglass:blit_fullscreen",
+  "fragment": "reglass:blur",
+  "samplers": [
+    { "name": "DiffuseSampler" }
+  ],
+  "uniforms": []
+}
