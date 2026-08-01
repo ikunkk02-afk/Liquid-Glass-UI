@@ -22,8 +22,9 @@ class LiquidGlassConfigManagerTest {
 
         assertTrue(Files.isRegularFile(file));
         assertEquals(GlassQualityPreset.MEDIUM, data.performance.preset);
-        assertEquals("#DDE7F2", data.appearance.mainColor);
+        assertEquals("#EAF2FA", data.appearance.mainColor);
         assertEquals(0.10f, data.appearance.opacity);
+        assertEquals(GlassDebugView.OFF, data.performance.debugView);
         assertEquals(2, data.schemaVersion);
         assertFalse(data.highQualityWarningAcknowledged);
     }
@@ -55,6 +56,38 @@ class LiquidGlassConfigManagerTest {
         assertEquals(9.0f, data.optics.blurRadius);
         assertEquals(GlassDebugView.OFF, data.performance.debugView);
         assertEquals(32.0f, data.fusion.distance);
+    }
+
+    @Test
+    void productionLoadForcesDiagnosticViewsOff() throws IOException {
+        Path file = directory.resolve("liquid_glass_ui.json");
+        String previous = System.getProperty(GlassDebugPolicy.SYSTEM_PROPERTY);
+        try {
+            System.clearProperty(GlassDebugPolicy.SYSTEM_PROPERTY);
+            Files.writeString(file, "{\"performance\":{\"preset\":\"LOW\",\"debugView\":\"SDF_DISTANCE\"}}",
+                    StandardCharsets.UTF_8);
+            LiquidGlassConfigData data = manager(file).load();
+
+            assertEquals(GlassQualityPreset.LOW, data.performance.preset);
+            assertEquals(GlassDebugView.OFF, data.performance.debugView);
+            assertTrue(Files.readString(file, StandardCharsets.UTF_8).contains("\"debugView\": \"OFF\""));
+        } finally {
+            restoreProperty(previous);
+        }
+    }
+
+    @Test
+    void explicitDebugPropertyAllowsDiagnosticViews() throws IOException {
+        Path file = directory.resolve("liquid_glass_ui.json");
+        String previous = System.getProperty(GlassDebugPolicy.SYSTEM_PROPERTY);
+        try {
+            System.setProperty(GlassDebugPolicy.SYSTEM_PROPERTY, "true");
+            Files.writeString(file, "{\"performance\":{\"debugView\":\"SDF_NORMAL\"}}",
+                    StandardCharsets.UTF_8);
+            assertEquals(GlassDebugView.SDF_NORMAL, manager(file).load().performance.debugView);
+        } finally {
+            restoreProperty(previous);
+        }
     }
 
     @Test
@@ -99,5 +132,10 @@ class LiquidGlassConfigManagerTest {
 
     private LiquidGlassConfigManager manager(Path file) {
         return new LiquidGlassConfigManager(file, LoggerFactory.getLogger("LiquidGlassConfigManagerTest"));
+    }
+
+    private static void restoreProperty(String value) {
+        if (value == null) System.clearProperty(GlassDebugPolicy.SYSTEM_PROPERTY);
+        else System.setProperty(GlassDebugPolicy.SYSTEM_PROPERTY, value);
     }
 }

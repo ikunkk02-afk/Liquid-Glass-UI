@@ -10,10 +10,10 @@ uniform sampler2D LightBlurSampler;
 uniform sampler2D FullBlurSampler;
 uniform sampler2D WidgetDataSampler;
 uniform vec2 FramebufferSize;
-uniform vec2 CaptureSize;
-uniform vec2 WidgetDataSize;
 uniform int WidgetCount;
 uniform int DebugMode;
+uniform int SampleCount;
+uniform int RefractionQuality;
 
 out vec4 fragColor;
 
@@ -116,6 +116,26 @@ vec3 groupColor(int group) {
     return 0.45 + 0.45 * cos(vec3(0.0, 2.1, 4.2) + seed * 1.73);
 }
 
+vec3 highQualityRefraction(vec2 point, vec2 normal, float offsetPixels, float dispersionPixels) {
+    int taps = clamp(SampleCount, 2, 12);
+    float tapsFloat = float(taps);
+    vec3 accumulated = vec3(0.0);
+    float totalWeight = 0.0;
+    for (int sampleIndex = 0; sampleIndex < 12; sampleIndex++) {
+        if (sampleIndex >= taps) break;
+        float phase = (float(sampleIndex) + 0.5) / tapsFloat - 0.5;
+        float weight = 1.0 - abs(phase) * 0.55;
+        vec2 samplePoint = point + normal * offsetPixels * (1.0 + phase * 0.32);
+        vec2 chroma = normal * dispersionPixels * 0.5;
+        accumulated += vec3(
+                texture(RawSampler, safeUv(samplePoint + chroma, RawSampler)).r,
+                texture(RawSampler, safeUv(samplePoint, RawSampler)).g,
+                texture(RawSampler, safeUv(samplePoint - chroma, RawSampler)).b) * weight;
+        totalWeight += weight;
+    }
+    return accumulated / max(totalWeight, 0.0001);
+}
+
 void main() {
     vec2 point = gl_FragCoord.xy;
     SDFResult field = fieldWidgets(point);
@@ -128,7 +148,9 @@ void main() {
     vec4 pointer = widgetRow(field.index, 5);
     vec4 surface = widgetRow(field.index, 9);
     vec4 detail = widgetRow(field.index, 10);
+    vec4 material = widgetRow(field.index, 11);
     float shadowRadius = surface.y;
+    float animationOpacity = clamp(pointer.z, 0.0, 1.0);
 
     if (DebugMode == 1) {
         if (field.distance > shadowRadius * 4.0) discard;
@@ -147,63 +169,84 @@ void main() {
         fragColor = vec4(groupColor(field.group), 0.9);
         return;
     }
+    float aa = max(fwidth(field.distance), 0.75);
     if (field.distance > shadowRadius) discard;
-    if (field.distance > 0.0) {
-        float shadow = (1.0 - smoothstep(0.0, shadowRadius, field.distance)) * opticsB.z;
-        fragColor = vec4(0.0, 0.0, 0.0, shadow * 0.34);
+    if (field.distance > aa) {
+        float shadow = (1.0 - smoothstep(aa, shadowRadius, field.distance)) * opticsB.z;
+        fragColor = vec4(0.0, 0.0, 0.0, shadow * 0.28 * animationOpacity);
         return;
     }
+    float coverage = 1.0 - smoothstep(-aa, aa, field.distance);
+    if (coverage <= 0.0) discard;
 
     vec2 baseUv = safeUv(point, RawSampler);
     if (DebugMode == 4) {
-        fragColor = vec4(texture(RawSampler, baseUv).rgb, pointer.z);
+        fragColor = vec4(texture(RawSampler, baseUv).rgb, coverage * animationOpacity);
         return;
     }
     if (DebugMode == 5) {
-        fragColor = vec4(texture(FullBlurSampler, safeUv(point, FullBlurSampler)).rgb, pointer.z);
+        fragColor = vec4(texture(FullBlurSampler, safeUv(point, FullBlurSampler)).rgb,
+                coverage * animationOpacity);
         return;
     }
 
     float thickness = max(opticsA.x, 0.5);
-    float edge = 1.0 - smoothstep(0.0, thickness, -field.distance);
-    float refractionPixels = edge * opticsA.y * thickness * (2.0 + interaction.y);
+    float surfaceEdge = 1.0 - smoothstep(0.0, thickness, -field.distance);
+    float edgeRangePixels = mix(thickness, max(thickness, min(rect.z, rect.w) * 0.5),
+            clamp(material.y, 0.0, 1.0));
+    float refractionEdge = 1.0 - smoothstep(0.0, edgeRangePixels, -field.distance);
+    float refractionPixels = refractionEdge * opticsA.y * thickness * (2.0 + interaction.y * 0.25);
     vec2 refractedPoint = point + field.normal * refractionPixels;
-    float dispersion = edge * opticsA.z;
-    vec2 refractedUv = safeUv(refractedPoint, RawSampler);
-    vec2 redUv = safeUv(refractedPoint + field.normal * dispersion, RawSampler);
-    vec2 blueUv = safeUv(refractedPoint - field.normal * dispersion, RawSampler);
-    vec3 rawColor = vec3(texture(RawSampler, redUv).r,
-                         texture(RawSampler, refractedUv).g,
-                         texture(RawSampler, blueUv).b);
+    vec3 rawBase = texture(RawSampler, baseUv).rgb;
+    vec3 rawColor = rawBase;
+    if (RefractionQuality == 1) {
+        rawColor = texture(RawSampler, safeUv(refractedPoint, RawSampler)).rgb;
+    } else if (RefractionQuality >= 2) {
+        rawColor = highQualityRefraction(point, field.normal, refractionPixels,
+                refractionEdge * opticsA.z);
+    }
     vec3 lightBlur = texture(LightBlurSampler, safeUv(refractedPoint, LightBlurSampler)).rgb;
     vec3 fullBlur = texture(FullBlurSampler, safeUv(refractedPoint, FullBlurSampler)).rgb;
-    vec3 blurred = mix(lightBlur, fullBlur, clamp(surface.z, 0.0, 1.0));
-    vec3 backdrop = mix(blurred, rawColor, clamp(opticsB.w, 0.0, 1.0));
+    float materialOpacity = clamp(material.x, 0.0, 1.0);
+    float densityCurve = sqrt(materialOpacity);
+    float densityFactor = mix(0.45, 1.0, densityCurve);
+    float clarity = clamp(opticsB.w, 0.0, 1.0);
+    vec3 structuredBlur = mix(fullBlur, lightBlur, clarity);
+    float blurWeight = clamp(surface.z, 0.0, 1.0) * mix(0.30, 1.0, densityCurve)
+            * mix(1.0, 0.55, clarity);
+    vec3 backdrop = mix(rawColor, structuredBlur, clamp(blurWeight, 0.0, 1.0));
     if (DebugMode == 6) {
-        fragColor = vec4(abs(rawColor - texture(RawSampler, baseUv).rgb) * 7.0, 1.0);
+        fragColor = vec4(abs(rawColor - rawBase) * 7.0, coverage * animationOpacity);
         return;
     }
 
-    float fresnel = pow(clamp(edge, 0.0, 1.0), 1.65) * opticsA.w;
+    float fineEdge = 1.0 - smoothstep(0.0, max(detail.z, aa), -field.distance);
+    float fresnel = pow(clamp(surfaceEdge, 0.0, 1.0), 1.65) * opticsA.w;
     vec2 lightDirection = normalize(vec2(-0.62, 0.78));
     float directional = pow(max(dot(field.normal, lightDirection), 0.0), 2.2);
-    float edgeHighlight = fresnel * opticsB.x * (0.48 + directional * 1.15 + interaction.y * 0.18);
-    float innerDark = (1.0 - directional) * edge * opticsB.y;
+    float edgeHighlight = (fresnel * 0.62 + fineEdge * 0.18) * opticsB.x
+            * (0.42 + directional * 0.95 + interaction.y * 0.10) * densityFactor;
+    float innerDark = (1.0 - directional) * surfaceEdge * opticsB.y * densityFactor;
     vec2 local = clamp((point - rect.xy) / max(rect.zw, vec2(1.0)), 0.0, 1.0);
-    float verticalLight = (local.y - 0.5) * 0.055;
     float pointerDistance = length((point - pointer.xy) / max(rect.zw, vec2(1.0)));
-    float pointerLight = (1.0 - smoothstep(0.05, 0.82, pointerDistance)) * detail.w * interaction.y * 0.22;
+    float pointerRange = max(material.z, 0.02);
+    float pointerLight = (1.0 - smoothstep(pointerRange * 0.15, pointerRange, pointerDistance))
+            * detail.w * (0.25 + interaction.x * 0.75) * (1.0 + interaction.y * 0.12)
+            * 0.16 * densityFactor;
+    float verticalSheen = (1.0 - smoothstep(0.0, 0.58, local.y)) * 0.008 * densityFactor;
     float luminance = dot(backdrop, vec3(0.2126, 0.7152, 0.0722));
-    float adaptive = detail.y > 0.5 ? mix(1.18, 0.82, luminance) : 1.0;
+    float adaptive = detail.y > 0.5 ? mix(1.12, 0.88, luminance) : 1.0;
     if (DebugMode == 7) {
-        fragColor = vec4(vec3(clamp(fresnel + edgeHighlight, 0.0, 1.0)), 1.0);
+        fragColor = vec4(vec3(clamp(fresnel + edgeHighlight, 0.0, 1.0)),
+                coverage * animationOpacity);
         return;
     }
 
-    vec3 color = mix(backdrop, tint.rgb, clamp(tint.a, 0.0, 1.0));
-    color += tint.rgb * (edgeHighlight * adaptive + pointerLight + verticalLight);
-    color -= vec3(innerDark);
-    color += hashNoise(point) * detail.x;
-    float alpha = clamp(0.70 + tint.a * 0.55 + edge * 0.10 + interaction.y * 0.04, 0.62, 0.92) * pointer.z;
-    fragColor = vec4(clamp(color, 0.0, 1.0), alpha);
+    float tintWeight = clamp(tint.a * (0.35 + densityCurve * 1.30), 0.0, 1.0);
+    vec3 color = mix(backdrop, tint.rgb, tintWeight);
+    vec3 highlightColor = mix(vec3(1.0), tint.rgb, 0.28);
+    color += highlightColor * (edgeHighlight * adaptive + pointerLight + verticalSheen);
+    color *= 1.0 - min(innerDark * 0.10, 0.08);
+    color += hashNoise(point) * detail.x * densityFactor;
+    fragColor = vec4(clamp(color, 0.0, 1.0), coverage * animationOpacity);
 }

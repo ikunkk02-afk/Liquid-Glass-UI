@@ -49,6 +49,7 @@ public final class LiquidGlassConfigManager {
             }
             if (loaded == null) throw new JsonParseException("Configuration root is null");
             loaded.sanitize();
+            GlassDebugPolicy.enforce(loaded);
             current = loaded;
             saveInternal(current);
         } catch (IOException | RuntimeException exception) {
@@ -74,12 +75,14 @@ public final class LiquidGlassConfigManager {
 
     public synchronized void replaceAndSave(LiquidGlassConfigData data) {
         LiquidGlassConfigData sanitized = Objects.requireNonNull(data, "data").sanitizedCopy();
+        GlassDebugPolicy.enforce(sanitized);
         saveInternal(sanitized);
         current = sanitized;
     }
 
     public synchronized LiquidGlassConfigData reset() {
         LiquidGlassConfigData defaults = LiquidGlassConfigData.defaults();
+        GlassDebugPolicy.enforce(defaults);
         saveInternal(defaults);
         current = defaults;
         return defaults.copy();

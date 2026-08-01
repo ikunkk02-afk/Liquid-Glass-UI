@@ -22,7 +22,8 @@ public final class GlassGroupMotion {
         transition = 0.0f;
     }
 
-    public void update(double delta, float stiffness, float damping, float speed, boolean reduceMotion) {
+    public void update(double delta, float stiffness, float damping, float speed,
+                       float connectionDurationSeconds, boolean reduceMotion) {
         if (reduceMotion) {
             active.snap(target);
             previous = target;
@@ -30,7 +31,8 @@ public final class GlassGroupMotion {
             return;
         }
         active.update(delta * speed, stiffness, damping);
-        transition = Math.min(1.0f, transition + (float) (delta * speed * 5.0));
+        transition = Math.min(1.0f, transition
+                + (float) (delta * speed / Math.max(0.05f, connectionDurationSeconds)));
         if (transition >= 0.999f) previous = target;
     }
 

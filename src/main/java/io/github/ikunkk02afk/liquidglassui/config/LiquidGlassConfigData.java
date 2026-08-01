@@ -63,13 +63,13 @@ public final class LiquidGlassConfigData {
 
     public static final class Appearance {
         public boolean enabled = true;
-        public String mainColor = "#DDE7F2";
+        public String mainColor = "#EAF2FA";
         public float opacity = 0.10f;
-        public float tintIntensity = 0.10f;
+        public float tintIntensity = 0.06f;
         public float cornerRadius = 9.0f;
         public float edgeWidth = 0.65f;
         public float edgeHighlightIntensity = 0.30f;
-        public float innerShadowIntensity = 0.12f;
+        public float innerShadowIntensity = 0.06f;
         public boolean adaptToBackgroundBrightness = true;
 
         private Appearance copy() {
@@ -87,7 +87,7 @@ public final class LiquidGlassConfigData {
         }
 
         private void sanitize() {
-            if (mainColor == null || !mainColor.matches("#[0-9a-fA-F]{6}")) mainColor = "#DDE7F2";
+            if (mainColor == null || !mainColor.matches("#[0-9a-fA-F]{6}")) mainColor = "#EAF2FA";
             mainColor = mainColor.toUpperCase(Locale.ROOT);
             opacity = clamp(opacity, 0.0f, 1.0f);
             tintIntensity = clamp(tintIntensity, 0.0f, 1.0f);
@@ -99,18 +99,18 @@ public final class LiquidGlassConfigData {
     }
 
     public static final class Optics {
-        public float blurIntensity = 0.70f;
-        public float blurRadius = 6.0f;
+        public float blurIntensity = 0.62f;
+        public float blurRadius = 5.5f;
         public float refractionIntensity = 0.025f;
         public float edgeRefractionRange = 0.28f;
-        public float mouseHighlightIntensity = 0.20f;
-        public float mouseHighlightRange = 0.78f;
-        public float surfaceNoiseIntensity = 0.008f;
-        public float glassThickness = 5.5f;
-        public float fresnelStrength = 0.32f;
-        public float dispersionStrength = 0.65f;
-        public float shadowStrength = 0.18f;
-        public float backgroundClarity = 0.62f;
+        public float mouseHighlightIntensity = 0.18f;
+        public float mouseHighlightRange = 0.68f;
+        public float surfaceNoiseIntensity = 0.002f;
+        public float glassThickness = 5.0f;
+        public float fresnelStrength = 0.24f;
+        public float dispersionStrength = 0.25f;
+        public float shadowStrength = 0.11f;
+        public float backgroundClarity = 0.84f;
 
         private Optics copy() {
             Optics copy = new Optics();

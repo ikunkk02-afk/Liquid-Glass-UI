@@ -9,9 +9,9 @@
   ],
   "uniforms": [
     { "name": "FramebufferSize", "type": "float", "count": 2, "values": [ 1920.0, 1080.0 ] },
-    { "name": "CaptureSize", "type": "float", "count": 2, "values": [ 1920.0, 1080.0 ] },
-    { "name": "WidgetDataSize", "type": "float", "count": 2, "values": [ 64.0, 12.0 ] },
     { "name": "WidgetCount", "type": "int", "count": 1, "values": [ 0 ] },
-    { "name": "DebugMode", "type": "int", "count": 1, "values": [ 0 ] }
+    { "name": "DebugMode", "type": "int", "count": 1, "values": [ 0 ] },
+    { "name": "SampleCount", "type": "int", "count": 1, "values": [ 4 ] },
+    { "name": "RefractionQuality", "type": "int", "count": 1, "values": [ 1 ] }
   ]
 }

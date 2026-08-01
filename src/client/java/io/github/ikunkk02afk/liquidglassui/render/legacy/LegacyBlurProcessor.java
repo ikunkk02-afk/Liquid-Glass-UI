@@ -31,15 +31,24 @@ final class LegacyBlurProcessor {
         TextureTarget input = targets.blurA();
         TextureTarget output = targets.blurB();
         int passes = frame.quality().blurPasses();
-        int lightAt = Math.max(1, passes / 2);
+        int lightAt = Math.min(passes, 2);
+        int samplePairs = Math.max(1, Math.min(6, (frame.quality().sampleCount() + 1) / 2));
+        float framebufferScale = Math.min(
+                frame.framebufferWidth() / (float) Math.max(1, frame.screenWidth()),
+                frame.framebufferHeight() / (float) Math.max(1, frame.screenHeight()));
+        int passesPerAxis = Math.max(1, (passes + 1) / 2);
+        float radiusInBufferPixels = Math.max(0.5f,
+                frame.blurRadius() * framebufferScale * frame.quality().bufferScale());
+        float stepSize = radiusInBufferPixels / (samplePairs * (float) Math.sqrt(passesPerAxis));
         TextureTarget light = null;
         for (int pass = 0; pass < passes; pass++) {
             output.bindWrite(true);
             RenderSystem.viewport(0, 0, output.viewWidth, output.viewHeight);
             bindSampler(shader, "Sampler0", 0, input.getColorTextureId());
             set(shader, "TexelSize", 1.0f / input.viewWidth, 1.0f / input.viewHeight);
-            float offset = 0.65f + (frame.blurRadius() * frame.quality().bufferScale() * (pass + 1)) / Math.max(2.0f, passes * 2.0f);
-            set(shader, "Offset", offset);
+            set(shader, "Direction", pass % 2 == 0 ? 1.0f : 0.0f, pass % 2 == 0 ? 0.0f : 1.0f);
+            set(shader, "StepSize", stepSize);
+            setInteger(shader, "SamplePairs", samplePairs);
             RenderSystem.disableDepthTest();
             RenderSystem.disableBlend();
             RenderSystem.disableScissor();
@@ -93,6 +102,11 @@ final class LegacyBlurProcessor {
     private static void set(ShaderInstance shader, String name, float x, float y) {
         Uniform uniform = shader.getUniform(name);
         if (uniform != null) uniform.set(x, y);
+    }
+
+    private static void setInteger(ShaderInstance shader, String name, int value) {
+        Uniform uniform = shader.getUniform(name);
+        if (uniform != null) uniform.set(value);
     }
 
     record Result(TextureTarget light, TextureTarget full) {}

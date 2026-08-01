@@ -10,6 +10,7 @@ import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.ikunkk02afk.liquidglassui.config.GlassDebugView;
+import io.github.ikunkk02afk.liquidglassui.config.GlassRefractionQuality;
 import io.github.ikunkk02afk.liquidglassui.render.GlassFrameContext;
 import io.github.ikunkk02afk.liquidglassui.render.frame.GlassFrameState;
 import io.github.ikunkk02afk.liquidglassui.render.frame.GlassWidgetTexturePacker;
@@ -48,10 +49,10 @@ final class LegacyCompositePass implements AutoCloseable {
         LegacyBlurProcessor.bindSampler(shader, "FullBlurSampler", 2, fullBlur.getColorTextureId());
         LegacyBlurProcessor.bindSampler(shader, "WidgetDataSampler", 3, dataTexture);
         set(shader, "FramebufferSize", frame.framebufferWidth(), frame.framebufferHeight());
-        set(shader, "CaptureSize", capture.viewWidth, capture.viewHeight);
-        set(shader, "WidgetDataSize", GlassWidgetTexturePacker.WIDTH, GlassWidgetTexturePacker.ROWS);
         setInteger(shader, "WidgetCount", state.widgetCount());
         setInteger(shader, "DebugMode", debugMode(frame.debugView()));
+        setInteger(shader, "SampleCount", frame.quality().sampleCount());
+        setInteger(shader, "RefractionQuality", refractionQuality(frame.quality().refractionQuality()));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
@@ -112,6 +113,14 @@ final class LegacyCompositePass implements AutoCloseable {
             case RAW_BLUR -> 5;
             case REFRACTION_ONLY -> 6;
             case FRESNEL_ONLY -> 7;
+        };
+    }
+
+    private static int refractionQuality(GlassRefractionQuality quality) {
+        return switch (quality) {
+            case OFF -> 0;
+            case LOW -> 1;
+            case HIGH -> 2;
         };
     }
 

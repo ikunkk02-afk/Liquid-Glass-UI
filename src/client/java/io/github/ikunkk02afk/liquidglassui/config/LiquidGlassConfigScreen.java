@@ -12,9 +12,9 @@ import dev.isxander.yacl3.api.controller.EnumControllerBuilder;
 import dev.isxander.yacl3.api.controller.FloatSliderControllerBuilder;
 import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
 import io.github.ikunkk02afk.liquidglassui.LiquidGlassUIClient;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
 import java.awt.Color;
@@ -32,8 +32,9 @@ public final class LiquidGlassConfigScreen {
         GlassQualityPreset originalPreset = working.performance.preset;
 
         YetAnotherConfigLib.Builder builder = YetAnotherConfigLib.createBuilder()
-                .title(Component.translatable("liquid_glass_ui.config.title"))
-                .category(appearance(working))
+                .title(Component.translatable("liquid_glass_ui.config.title"));
+        if (GlassDebugPolicy.enabled()) builder.category(developer(working));
+        builder.category(appearance(working))
                 .category(optics(working))
                 .category(animation(working))
                 .category(interfaceOptions(working))
@@ -82,6 +83,11 @@ public final class LiquidGlassConfigScreen {
                 .option(decimal("optics.mouse_highlight", defaults.optics.mouseHighlightIntensity, 0, 1, 0.01f, () -> data.optics.mouseHighlightIntensity, value -> data.optics.mouseHighlightIntensity = value))
                 .option(decimal("optics.mouse_highlight_range", defaults.optics.mouseHighlightRange, 0, 1, 0.01f, () -> data.optics.mouseHighlightRange, value -> data.optics.mouseHighlightRange = value))
                 .option(decimal("optics.surface_noise", defaults.optics.surfaceNoiseIntensity, 0, 1, 0.005f, () -> data.optics.surfaceNoiseIntensity, value -> data.optics.surfaceNoiseIntensity = value))
+                .option(decimal("optics.glass_thickness", defaults.optics.glassThickness, 0.5f, 16, 0.5f, () -> data.optics.glassThickness, value -> data.optics.glassThickness = value))
+                .option(decimal("optics.fresnel_strength", defaults.optics.fresnelStrength, 0, 1, 0.01f, () -> data.optics.fresnelStrength, value -> data.optics.fresnelStrength = value))
+                .option(decimal("optics.dispersion_strength", defaults.optics.dispersionStrength, 0, 2, 0.01f, () -> data.optics.dispersionStrength, value -> data.optics.dispersionStrength = value))
+                .option(decimal("optics.shadow_strength", defaults.optics.shadowStrength, 0, 1, 0.01f, () -> data.optics.shadowStrength, value -> data.optics.shadowStrength = value))
+                .option(decimal("optics.background_clarity", defaults.optics.backgroundClarity, 0, 1, 0.01f, () -> data.optics.backgroundClarity, value -> data.optics.backgroundClarity = value))
                 .build();
     }
 
@@ -116,10 +122,6 @@ public final class LiquidGlassConfigScreen {
         if (LiquidGlassUIClient.renderBackend().status().safeMode()) {
             category.option(LabelOption.create(tr("performance.safe_mode_active")));
         }
-        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
-            category.option(enumeration("performance.debug_view", GlassDebugView.class, defaults.performance.debugView,
-                    () -> data.performance.debugView, value -> data.performance.debugView = value, "debug_view"));
-        }
         return category
                 .option(enumeration("performance.preset", GlassQualityPreset.class, defaults.performance.preset,
                         () -> data.performance.preset, value -> data.performance.preset = value, "quality"))
@@ -138,6 +140,19 @@ public final class LiquidGlassConfigScreen {
                             manager.reset();
                             Minecraft.getInstance().execute(() -> Minecraft.getInstance().setScreen(create(parent)));
                         }).build())
+                .build();
+    }
+
+    private static ConfigCategory developer(LiquidGlassConfigData data) {
+        LiquidGlassConfigData defaults = LiquidGlassConfigData.defaults();
+        ConfigCategory.Builder category = ConfigCategory.createBuilder().name(tr("category.developer"));
+        if (data.performance.debugView != GlassDebugView.OFF) {
+            category.option(LabelOption.create(tr("developer.debug_warning").copy()
+                    .withStyle(ChatFormatting.RED, ChatFormatting.BOLD)));
+        }
+        return category
+                .option(enumeration("performance.debug_view", GlassDebugView.class, defaults.performance.debugView,
+                        () -> data.performance.debugView, value -> data.performance.debugView = value, "debug_view"))
                 .build();
     }
 

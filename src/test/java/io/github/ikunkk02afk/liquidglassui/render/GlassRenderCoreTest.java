@@ -5,6 +5,7 @@ import io.github.ikunkk02afk.liquidglassui.config.LiquidGlassConfigData;
 import io.github.ikunkk02afk.liquidglassui.render.frame.GlassFrameCollector;
 import io.github.ikunkk02afk.liquidglassui.render.frame.GlassWidgetData;
 import io.github.ikunkk02afk.liquidglassui.render.frame.GlassWidgetTexturePacker;
+import io.github.ikunkk02afk.liquidglassui.render.material.GlassMaterial;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,8 +18,9 @@ class GlassRenderCoreTest {
         LiquidGlassConfigData data = LiquidGlassConfigData.defaults();
         assertEquals(new GlassQualityBudget(0.5f, 4, GlassRefractionQuality.LOW, 4), GlassQualityBudget.from(data));
         data.performance.preset = io.github.ikunkk02afk.liquidglassui.config.GlassQualityPreset.LOW;
-        assertEquals(0.25f, GlassQualityBudget.from(data).bufferScale());
-        assertFalse(GlassQualityBudget.from(data).dynamicRefraction());
+        assertEquals(0.4f, GlassQualityBudget.from(data).bufferScale());
+        assertTrue(GlassQualityBudget.from(data).dynamicRefraction());
+        assertEquals(GlassRefractionQuality.LOW, GlassQualityBudget.from(data).refractionQuality());
         data.performance.preset = io.github.ikunkk02afk.liquidglassui.config.GlassQualityPreset.HIGH;
         assertEquals(6, GlassQualityBudget.from(data).blurPasses());
         assertEquals(1440, GlassQualityBudget.from(data).targetWidth(1920));
@@ -90,5 +92,33 @@ class GlassRenderCoreTest {
         assertEquals(1080.0f - 70.0f * 1080.0f / 479.0f, packed[1], 0.0001f);
         assertEquals(200.0f * 1920.0f / 853.0f, packed[2], 0.0001f);
         assertEquals(20.0f * 1080.0f / 479.0f, packed[3], 0.0001f);
+    }
+
+    @Test
+    void materialDensityAndOpticalRangesArePackedSeparatelyFromAnimationOpacity() {
+        LiquidGlassConfigData data = LiquidGlassConfigData.defaults();
+        data.appearance.opacity = 0.30f;
+        data.optics.edgeRefractionRange = 0.44f;
+        data.optics.mouseHighlightRange = 0.73f;
+        GlassQualityBudget quality = new GlassQualityBudget(0.75f, 6, GlassRefractionQuality.HIGH, 8);
+
+        GlassFrameCollector collector = new GlassFrameCollector();
+        collector.begin(9, 64);
+        GlassWidgetData widget = collector.add();
+        assertNotNull(widget);
+        widget.width = 200.0f;
+        widget.height = 20.0f;
+        widget.animationOpacity = 0.42f;
+        widget.material = GlassMaterial.from(data, quality);
+        GlassFrameContext frame = new GlassFrameContext(9, 960, 540, 1920, 1080,
+                2.0, 0.0f, 0.0f, quality);
+        float[] packed = new GlassWidgetTexturePacker().pack(collector.freeze(), frame);
+
+        int animationRow = (5 * GlassWidgetTexturePacker.WIDTH) * GlassWidgetTexturePacker.CHANNELS;
+        int materialRow = (11 * GlassWidgetTexturePacker.WIDTH) * GlassWidgetTexturePacker.CHANNELS;
+        assertEquals(0.42f, packed[animationRow + 2], 0.0001f);
+        assertEquals(0.30f, packed[materialRow], 0.0001f);
+        assertEquals(0.44f, packed[materialRow + 1], 0.0001f);
+        assertEquals(0.73f, packed[materialRow + 2], 0.0001f);
     }
 }

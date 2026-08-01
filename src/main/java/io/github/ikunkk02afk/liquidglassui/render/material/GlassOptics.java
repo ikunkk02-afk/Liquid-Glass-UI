@@ -5,10 +5,11 @@
  */
 package io.github.ikunkk02afk.liquidglassui.render.material;
 
-public record GlassOptics(float thickness, float refraction, float fresnel, float edgeHighlight,
-                          float dispersionPixels, float innerShadow, float shadowStrength,
-                          float backgroundClarity, float noiseStrength) {
+public record GlassOptics(float thickness, float refraction, float edgeRefractionRange, float fresnel,
+                          float edgeHighlight, float dispersionPixels, float innerShadow, float shadowStrength,
+                          float backgroundClarity, float noiseStrength, float mouseHighlightRange) {
     public static GlassOptics defaults() {
-        return new GlassOptics(5.5f, 0.025f, 0.32f, 0.26f, 0.65f, 0.12f, 0.18f, 0.62f, 0.008f);
+        return new GlassOptics(5.0f, 0.025f, 0.28f, 0.24f, 0.30f, 0.25f,
+                0.06f, 0.11f, 0.84f, 0.002f, 0.68f);
     }
 }

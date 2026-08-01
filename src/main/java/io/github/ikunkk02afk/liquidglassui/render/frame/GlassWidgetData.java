@@ -15,9 +15,8 @@ public final class GlassWidgetData {
     public float hover;
     public float press;
     public float focus;
-    public float opacity;
+    public float animationOpacity;
     public int groupId;
-    public int materialId;
     public int shape = SHAPE_ROUNDED_RECT;
     public float smoothing;
     public float mouseX;
@@ -36,9 +35,8 @@ public final class GlassWidgetData {
     public void reset() {
         x = y = width = height = cornerRadius = 0.0f;
         hover = press = focus = 0.0f;
-        opacity = 1.0f;
+        animationOpacity = 1.0f;
         groupId = -1;
-        materialId = 0;
         shape = SHAPE_ROUNDED_RECT;
         smoothing = 0.0f;
         mouseX = mouseY = 0.0f;

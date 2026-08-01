@@ -19,7 +19,8 @@ public final class GlassGroupController {
 
     public void update(double delta, LiquidGlassConfigData config) {
         if (motion != null) motion.update(delta, config.animation.springStiffness, config.animation.damping,
-                config.animation.speed, config.animation.reduceMotion || !config.animation.enabled);
+                config.animation.speed, config.fusion.connectionDurationSeconds,
+                config.animation.reduceMotion || !config.animation.enabled);
     }
 
     public boolean isActive(AbstractButton button) { return button == activeButton && motion != null; }

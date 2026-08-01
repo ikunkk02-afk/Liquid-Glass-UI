@@ -3,6 +3,7 @@ package io.github.ikunkk02afk.liquidglassui.screen;
 import io.github.ikunkk02afk.liquidglassui.animation.AnimationClock;
 import io.github.ikunkk02afk.liquidglassui.config.LiquidGlassConfigData;
 import io.github.ikunkk02afk.liquidglassui.config.LiquidGlassConfigManager;
+import io.github.ikunkk02afk.liquidglassui.config.GlassDebugPolicy;
 import io.github.ikunkk02afk.liquidglassui.render.GlassFrameContext;
 import io.github.ikunkk02afk.liquidglassui.render.GlassQualityBudget;
 import io.github.ikunkk02afk.liquidglassui.render.GlassRectangle;
@@ -146,7 +147,7 @@ public final class LiquidGlassScreenManager {
         var main = client.getMainRenderTarget();
         backend.beginFrame(new GlassFrameContext(currentFrame, screen.width, screen.height,
                 main.viewWidth, main.viewHeight, client.getWindow().getGuiScale(), mouseX, mouseY,
-                quality, config.performance.debugView, config.optics.blurRadius));
+                quality, GlassDebugPolicy.constrain(config.performance.debugView), config.optics.blurRadius));
         if (state.enabled) collectWidgets(state, config, quality, mouseX, mouseY);
     }
 
@@ -171,11 +172,11 @@ public final class LiquidGlassScreenManager {
             widget.hover = animation.hover();
             widget.press = widgetState.pressed() ? 1.0f : 0.0f;
             widget.focus = button.isFocused() ? 1.0f : 0.0f;
-            widget.opacity = animation.opacity();
+            widget.animationOpacity = animation.opacity();
             widget.groupId = state.groupIds.get(button);
             widget.smoothing = config.fusion.enabled && config.fusion.staticConnection ? config.fusion.softness : 0.0f;
-            widget.mouseX = mouseX;
-            widget.mouseY = mouseY;
+            widget.mouseX = bounds.x() + animation.highlightX() * bounds.width();
+            widget.mouseY = bounds.y() + animation.highlightY() * bounds.height();
             widget.material = material;
         }
         if (!config.fusion.enabled || config.animation.reduceMotion) return;
@@ -194,9 +195,12 @@ public final class LiquidGlassScreenManager {
         float dx = active.centerX() - previous.centerX();
         float dy = active.centerY() - previous.centerY();
         float centerDistance = (float) Math.sqrt(dx * dx + dy * dy);
-        float allowed = config.fusion.distance + Math.max(previous.width(), previous.height()) * 0.5f
-                + Math.max(active.width(), active.height()) * 0.5f;
-        if (centerDistance > allowed || centerDistance < 0.01f) return;
+        float gapX = Math.max(0.0f, Math.abs(dx) - (previous.width() + active.width()) * 0.5f);
+        float gapY = Math.max(0.0f, Math.abs(dy) - (previous.height() + active.height()) * 0.5f);
+        float edgeGap = (float) Math.sqrt(gapX * gapX + gapY * gapY);
+        float allowedGap = Math.min(config.fusion.distance,
+                Math.min(previous.height(), active.height()) * 1.5f);
+        if (edgeGap > allowedGap || centerDistance < 0.01f) return;
         GlassWidgetData capsule = collector.add();
         if (capsule == null) return;
         capsule.shape = GlassWidgetData.SHAPE_CAPSULE;
@@ -205,10 +209,11 @@ public final class LiquidGlassScreenManager {
         capsule.capsuleStartY = previous.centerY();
         capsule.capsuleEndX = active.centerX();
         capsule.capsuleEndY = active.centerY();
-        capsule.capsuleRadius = Math.min(previous.height(), active.height()) * (0.12f + 0.30f * merge);
+        float halfHeight = Math.min(previous.height(), active.height()) * 0.5f;
+        capsule.capsuleRadius = halfHeight * (0.72f + 0.20f * merge);
         capsule.smoothing = config.fusion.softness * merge;
         capsule.hover = merge;
-        capsule.opacity = Math.min(1.0f, previous.height() <= 0.0f ? 0.0f : merge * 1.5f);
+        capsule.animationOpacity = Math.min(1.0f, previous.height() <= 0.0f ? 0.0f : merge * 2.0f);
         capsule.mouseX = mouseX;
         capsule.mouseY = mouseY;
         capsule.material = material;

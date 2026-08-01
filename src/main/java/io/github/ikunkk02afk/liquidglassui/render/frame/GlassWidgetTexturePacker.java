@@ -28,12 +28,12 @@ public final class GlassWidgetTexturePacker {
             put(column, 0, fbX, fbY, fbW, fbH);
             put(column, 1, widget.cornerRadius * radiusScale, widget.hover, widget.press, widget.focus);
             GlassMaterial material = widget.material;
-            put(column, 2, material.red(), material.green(), material.blue(), material.tintAlpha());
+            put(column, 2, material.red(), material.green(), material.blue(), material.tintIntensity());
             GlassOptics optics = material.optics();
             put(column, 3, optics.thickness() * radiusScale, optics.refraction(), optics.dispersionPixels(), optics.fresnel());
             put(column, 4, optics.edgeHighlight(), optics.innerShadow(), optics.shadowStrength(), optics.backgroundClarity());
             put(column, 5, widget.mouseX * scaleX, context.framebufferHeight() - widget.mouseY * scaleY,
-                    widget.opacity, 1.0f);
+                    widget.animationOpacity, 1.0f);
             put(column, 6, widget.groupId, widget.shape, widget.smoothing * radiusScale, widget.hover);
             float sx = widget.scissorX * scaleX;
             float sy = context.framebufferHeight() - (widget.scissorY + widget.scissorHeight) * scaleY;
@@ -51,7 +51,8 @@ public final class GlassWidgetTexturePacker {
                     material.blurMix(), 1.0f);
             put(column, 10, optics.noiseStrength(), material.adaptBrightness() ? 1.0f : 0.0f,
                     material.edgeWidth() * radiusScale, material.mouseHighlight());
-            put(column, 11, widget.materialId, 0.0f, 0.0f, 0.0f);
+            put(column, 11, material.materialOpacity(), optics.edgeRefractionRange(),
+                    optics.mouseHighlightRange(), 0.0f);
         }
         return data;
     }

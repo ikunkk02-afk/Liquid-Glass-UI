@@ -7,7 +7,7 @@ import io.github.ikunkk02afk.liquidglassui.config.LiquidGlassConfigData;
 public record GlassQualityBudget(float bufferScale, int blurPasses, GlassRefractionQuality refractionQuality, int sampleCount) {
     public static GlassQualityBudget from(LiquidGlassConfigData data) {
         return switch (data.performance.preset) {
-            case LOW -> new GlassQualityBudget(0.25f, 2, GlassRefractionQuality.OFF, 2);
+            case LOW -> new GlassQualityBudget(0.4f, 2, GlassRefractionQuality.LOW, 2);
             case MEDIUM -> new GlassQualityBudget(0.5f, 4, GlassRefractionQuality.LOW, 4);
             case HIGH -> new GlassQualityBudget(0.75f, 6, GlassRefractionQuality.HIGH, 8);
             case CUSTOM -> new GlassQualityBudget(data.performance.customBufferScale, data.performance.customBlurPasses,

@@ -34,7 +34,7 @@ class AnimationSystemTest {
         GlassGroupMotion group = new GlassGroupMotion(new GlassRectangle(0, 0, 200, 20));
         for (int frame = 0; frame < 300; frame++) {
             if (frame % 3 == 0) group.target(new GlassRectangle((frame % 10) * 24, (frame % 7) * 22, 200, 20));
-            group.update(1.0 / 144.0, 220.0f, 28.0f, 1.0f, false);
+            group.update(1.0 / 144.0, 220.0f, 28.0f, 1.0f, 0.18f, false);
             GlassRectangle value = group.active();
             assertTrue(Float.isFinite(value.x()) && Float.isFinite(value.y()));
             assertTrue(value.width() >= 0 && value.width() < 260);
