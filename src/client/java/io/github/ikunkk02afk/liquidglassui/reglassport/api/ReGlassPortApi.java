@@ -24,6 +24,9 @@ public final class ReGlassPortApi {
     private float hover;
     private float focus;
     private float press;
+    private float fusion = 1.0f;
+    private float highlightX;
+    private float highlightY;
     private int groupId;
     private long stableId;
 
@@ -86,6 +89,17 @@ public final class ReGlassPortApi {
         return this;
     }
 
+    public ReGlassPortApi fusion(float amount) {
+        fusion = clamp01(amount);
+        return this;
+    }
+
+    public ReGlassPortApi highlight(float x, float y) {
+        highlightX = clampSigned(x);
+        highlightY = clampSigned(y);
+        return this;
+    }
+
     public ReGlassPortApi group(int groupId) {
         this.groupId = groupId;
         return this;
@@ -103,7 +117,8 @@ public final class ReGlassPortApi {
         float radius = Float.isNaN(cornerRadius) ? Math.min(width, height) * 0.5f : cornerRadius;
         ReGlassPortClient.submit(new ReGlassUniformData(
                 stableId, x, y, width, height, Math.min(radius, Math.min(width, height) * 0.5f),
-                style, hover, focus, press, groupId, 0.0f, 0.0f, screenWidth, screenHeight));
+                style, hover, focus, press, fusion, highlightX, highlightY,
+                groupId, 0.0f, 0.0f, screenWidth, screenHeight));
     }
 
     private static float finite(float value) {
@@ -113,5 +128,10 @@ public final class ReGlassPortApi {
     private static float clamp01(float value) {
         if (!Float.isFinite(value)) return 0.0f;
         return Math.max(0.0f, Math.min(1.0f, value));
+    }
+
+    private static float clampSigned(float value) {
+        if (!Float.isFinite(value)) return 0.0f;
+        return Math.max(-1.0f, Math.min(1.0f, value));
     }
 }

@@ -32,10 +32,10 @@ import java.util.List;
 
 /** Uploads one 64x12 float texture and executes the unified GUI composite. */
 public final class ReGlassCompositePass implements AutoCloseable {
-    public static final int WIDTH = 64;
-    public static final int ROWS = 12;
-    private static final int CHANNELS = 4;
-    private final float[] packed = new float[WIDTH * ROWS * CHANNELS];
+    public static final int WIDTH = ReGlassTextureLayout.WIDTH;
+    public static final int ROWS = ReGlassTextureLayout.ROWS;
+    private static final int CHANNELS = ReGlassTextureLayout.CHANNELS;
+    private final float[] packed = new float[ReGlassTextureLayout.FLOAT_COUNT];
     private final FloatBuffer upload = MemoryUtil.memAllocFloat(packed.length);
     private int dataTexture;
 
@@ -56,7 +56,7 @@ public final class ReGlassCompositePass implements AutoCloseable {
         set(shader, "FramebufferSize", framebufferWidth, framebufferHeight);
         setInteger(shader, "WidgetCount", widgets.size());
         setInteger(shader, "DebugMode", debugMode);
-        setFloat(shader, "Time", (System.nanoTime() & 0xFFFFFFFL) / 1_000_000_000.0f);
+        setFloat(shader, "Time", (System.nanoTime() % 60_000_000_000L) / 1_000_000_000.0f);
         setFloat(shader, "HoverScalePx", GlassPortConfig.DEFAULTS.hoverScalePx * framebufferHeight / Math.max(1.0f, screenHeight));
         setFloat(shader, "FocusScalePx", GlassPortConfig.DEFAULTS.focusScalePx * framebufferHeight / Math.max(1.0f, screenHeight));
         setFloat(shader, "FocusBorderWidthPx", GlassPortConfig.DEFAULTS.focusBorderWidthPx * framebufferHeight / Math.max(1.0f, screenHeight));
@@ -112,7 +112,8 @@ public final class ReGlassCompositePass implements AutoCloseable {
             put(column, 9, red(shadow), green(shadow), blue(shadow), style.shadowColorAlpha(defaults));
             put(column, 10, blurIndex(style.blurRadius(defaults), blurLevels),
                     widget.hover(), widget.focus(), widget.press());
-            put(column, 11, seed(widget.stableId()), 0.0f, 0.0f, 1.0f);
+            put(column, 11, seed(widget.stableId()), widget.fusion(),
+                    widget.highlightX(), widget.highlightY());
         }
         upload.clear();
         upload.put(packed).flip();
@@ -125,7 +126,7 @@ public final class ReGlassCompositePass implements AutoCloseable {
     }
 
     private void put(int column, int row, float x, float y, float z, float w) {
-        int offset = (row * WIDTH + column) * CHANNELS;
+        int offset = ReGlassTextureLayout.offset(column, row);
         packed[offset] = x;
         packed[offset + 1] = y;
         packed[offset + 2] = z;

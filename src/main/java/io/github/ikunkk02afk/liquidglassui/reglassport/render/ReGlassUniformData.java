@@ -11,6 +11,7 @@ import io.github.ikunkk02afk.liquidglassui.reglassport.api.GlassStyle;
 /** One immutable deferred glass-component submission in GUI coordinates. */
 public record ReGlassUniformData(long stableId, float x, float y, float width, float height,
                                  float cornerRadius, GlassStyle style, float hover, float focus,
-                                 float press, int groupId, float scissorX, float scissorY,
+                                 float press, float fusion, float highlightX, float highlightY,
+                                 int groupId, float scissorX, float scissorY,
                                  float scissorWidth, float scissorHeight) {
 }

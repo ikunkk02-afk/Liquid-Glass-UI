@@ -6,6 +6,11 @@ import io.github.ikunkk02afk.liquidglassui.reglassport.render.ReGlassLegacyRende
 import io.github.ikunkk02afk.liquidglassui.reglassport.render.ReGlassUniformData;
 import io.github.ikunkk02afk.liquidglassui.reglassport.screen.ReGlassPlaygroundScreen;
 import io.github.ikunkk02afk.liquidglassui.reglassport.widget.LiquidGlassPortWidget;
+import io.github.ikunkk02afk.liquidglassui.reglassport.animation.ReGlassAnimationRuntime;
+import io.github.ikunkk02afk.liquidglassui.reglassport.widget.GlassWidgetState;
+import io.github.ikunkk02afk.liquidglassui.LiquidGlassUIClient;
+import io.github.ikunkk02afk.liquidglassui.config.GlassRendererMode;
+import io.github.ikunkk02afk.liquidglassui.config.LiquidGlassConfigData;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
@@ -22,6 +27,7 @@ import java.util.List;
 public final class ReGlassPortClient {
     private static final ReGlassFrameCollector COLLECTOR = new ReGlassFrameCollector();
     private static final ArrayList<LiquidGlassPortWidget> DEFERRED = new ArrayList<>();
+    private static final ReGlassAnimationRuntime ANIMATION = new ReGlassAnimationRuntime();
     private static ReGlassLegacyRenderer renderer;
     private static Logger logger;
     private static Screen activeScreen;
@@ -50,8 +56,9 @@ public final class ReGlassPortClient {
     }
 
     public static void beginFrame(Screen screen, GuiGraphics graphics) {
-        if (!(screen instanceof ReGlassPlaygroundScreen) || renderer == null) return;
+        if (!(screen instanceof ReGlassPlaygroundScreen) || renderer == null || !enabled()) return;
         graphics.flush();
+        ANIMATION.beginFrame(System.nanoTime());
         activeScreen = screen;
         DEFERRED.clear();
         COLLECTOR.beginFrame();
@@ -67,6 +74,24 @@ public final class ReGlassPortClient {
 
     public static void defer(LiquidGlassPortWidget widget) {
         if (activeScreen != null && DEFERRED.size() < ReGlassFrameCollector.MAX_WIDGETS) DEFERRED.add(widget);
+    }
+
+    public static boolean frameActive() {
+        return activeScreen != null && COLLECTOR.active();
+    }
+
+    public static GlassWidgetState animate(long stableId, float x, float y,
+                                           float hover, float focus, float press,
+                                           float highlightX, float highlightY, float fusionTarget) {
+        LiquidGlassConfigData config = LiquidGlassUIClient.configManager().get();
+        if (!config.animation.enabled || config.animation.reduceMotion) {
+            return new GlassWidgetState(x, y, hover, focus, press,
+                    hover * 1.5f + focus * 2.5f - press * 0.8f,
+                    fusionTarget, highlightX, highlightY);
+        }
+        return ANIMATION.sample(stableId, x, y, hover, focus, press,
+                highlightX, highlightY, fusionTarget,
+                config.animation.springStiffness, config.animation.damping);
     }
 
     public static void finishFrame(Screen screen, GuiGraphics graphics, int debugMode) {
@@ -100,6 +125,11 @@ public final class ReGlassPortClient {
         renderer = null;
         activeScreen = null;
         DEFERRED.clear();
+    }
+
+    private static boolean enabled() {
+        LiquidGlassConfigData config = LiquidGlassUIClient.configManager().get();
+        return config.ui.reGlassPortEnabled && config.ui.rendererMode == GlassRendererMode.REGLASS_PORT;
     }
 
     private static void warnRateLimited(String message) {

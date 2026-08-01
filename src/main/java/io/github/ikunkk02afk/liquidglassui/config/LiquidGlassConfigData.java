@@ -3,7 +3,7 @@ package io.github.ikunkk02afk.liquidglassui.config;
 import java.util.Locale;
 
 public final class LiquidGlassConfigData {
-    public static final int CURRENT_SCHEMA_VERSION = 2;
+    public static final int CURRENT_SCHEMA_VERSION = 3;
 
     public int schemaVersion = CURRENT_SCHEMA_VERSION;
     public Appearance appearance = new Appearance();
@@ -49,6 +49,7 @@ public final class LiquidGlassConfigData {
         optics.sanitize();
         animation.sanitize();
         fusion.sanitize();
+        ui.sanitize();
         performance.sanitize();
     }
 
@@ -208,6 +209,8 @@ public final class LiquidGlassConfigData {
     }
 
     public static final class InterfaceOptions {
+        public GlassRendererMode rendererMode = GlassRendererMode.REGLASS_PORT;
+        public boolean reGlassPortEnabled = true;
         public boolean mainMenu = true;
         public boolean pauseMenu = true;
         public boolean confirmDialogs = true;
@@ -215,11 +218,17 @@ public final class LiquidGlassConfigData {
 
         private InterfaceOptions copy() {
             InterfaceOptions copy = new InterfaceOptions();
+            copy.rendererMode = rendererMode;
+            copy.reGlassPortEnabled = reGlassPortEnabled;
             copy.mainMenu = mainMenu;
             copy.pauseMenu = pauseMenu;
             copy.confirmDialogs = confirmDialogs;
             copy.replaceCommonButtons = replaceCommonButtons;
             return copy;
+        }
+
+        private void sanitize() {
+            if (rendererMode == null) rendererMode = GlassRendererMode.REGLASS_PORT;
         }
     }
 

@@ -81,28 +81,54 @@ vec4 sampleBlur(int index, vec2 uv) {
     return texture(BlurSampler4, safeUv);
 }
 
+bool widgetContainsCoordinate(int index, vec2 fragmentCoord) {
+    vec4 scissor = widgetData(index, 7);
+    return fragmentCoord.x >= scissor.x && fragmentCoord.y >= scissor.y
+            && fragmentCoord.x <= scissor.z && fragmentCoord.y <= scissor.w;
+}
+
+SDFResult widgetShape(int index, vec2 fragmentCoord) {
+    vec4 rectangle = widgetData(index, 0);
+    vec4 radii = widgetData(index, 1);
+    vec4 interaction = widgetData(index, 10);
+    vec2 center = rectangle.xy + rectangle.zw * 0.5;
+    vec3 box = sdgBox(fragmentCoord - center, rectangle.zw * 0.5, radii);
+    float expansion = HoverScalePx * interaction.y + FocusScalePx * interaction.z + 0.8 * interaction.w;
+    return SDFResult(box.x - expansion, box.yz,
+            min(rectangle.z, rectangle.w) / max(rectangle.z, rectangle.w), index);
+}
+
 SDFResult fieldWidgets(vec2 fragmentCoord) {
     SDFResult field = SDFResult(1e20, vec2(0.0), 1.0, -1);
-    bool initialized = false;
+    bool fieldInitialized = false;
     for (int i = 0; i < MAX_WIDGETS; ++i) {
         if (i >= WidgetCount) break;
-        vec4 scissor = widgetData(i, 7);
-        if (fragmentCoord.x < scissor.x || fragmentCoord.y < scissor.y
-                || fragmentCoord.x > scissor.z || fragmentCoord.y > scissor.w) continue;
-        vec4 rectangle = widgetData(i, 0);
-        vec4 radii = widgetData(i, 1);
-        vec4 interaction = widgetData(i, 10);
-        vec2 center = rectangle.xy + rectangle.zw * 0.5;
-        vec3 box = sdgBox(fragmentCoord - center, rectangle.zw * 0.5, radii);
-        float expansion = HoverScalePx * interaction.y + FocusScalePx * interaction.z + 0.8 * interaction.w;
-        SDFResult shape = SDFResult(box.x - expansion, box.yz,
-                min(rectangle.z, rectangle.w) / max(rectangle.z, rectangle.w), i);
-        if (!initialized) {
-            field = shape;
-            initialized = true;
-        } else {
-            field = opSmoothUnion(field, shape, max(0.0, widgetData(i, 6).x));
+        if (!widgetContainsCoordinate(i, fragmentCoord)) continue;
+        int group = int(widgetData(i, 6).y + 0.5);
+        bool groupAlreadyProcessed = false;
+        for (int previous = 0; previous < MAX_WIDGETS; ++previous) {
+            if (previous >= i) break;
+            if (widgetContainsCoordinate(previous, fragmentCoord)
+                    && int(widgetData(previous, 6).y + 0.5) == group) {
+                groupAlreadyProcessed = true;
+                break;
+            }
         }
+        if (groupAlreadyProcessed) continue;
+
+        SDFResult groupField = widgetShape(i, fragmentCoord);
+        float groupSmoothing = max(0.0, widgetData(i, 6).x) * widgetData(i, 11).y;
+        for (int other = 0; other < MAX_WIDGETS; ++other) {
+            if (other <= i) continue;
+            if (other >= WidgetCount) break;
+            if (!widgetContainsCoordinate(other, fragmentCoord)) continue;
+            if (int(widgetData(other, 6).y + 0.5) != group) continue;
+            float smoothing = max(groupSmoothing,
+                    max(0.0, widgetData(other, 6).x) * widgetData(other, 11).y);
+            groupField = opSmoothUnion(groupField, widgetShape(other, fragmentCoord), smoothing);
+        }
+        field = fieldInitialized ? opHardUnion(field, groupField) : groupField;
+        fieldInitialized = true;
     }
     return field;
 }
@@ -220,7 +246,9 @@ void main() {
     float glareHardness = optics1.w / 100.0;
     float glareGeometry = clamp(pow(1.0 + merged / 1500.0
             * pow(500.0 / max(optics1.z, 1e-6), 2.0) + glareHardness, 5.0), 0.0, 1.0);
-    vec2 glareDirection = vec2(cos(optics2.w), sin(optics2.w));
+    vec2 configuredGlareDirection = vec2(cos(optics2.w), sin(optics2.w));
+    vec2 trackedGlareDirection = normalize(widgetData(index, 11).zw + vec2(1e-5, 0.0));
+    vec2 glareDirection = normalize(mix(configuredGlareDirection, trackedGlareDirection, interaction.y * 0.65));
     float directionality = 0.5 + 0.5 * dot(normal, glareDirection);
     float convergence = max(0.25, optics2.x / 50.0);
     float facing = pow(clamp(directionality, 0.0, 1.0), convergence);

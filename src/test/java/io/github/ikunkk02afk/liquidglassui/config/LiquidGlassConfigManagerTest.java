@@ -25,7 +25,7 @@ class LiquidGlassConfigManagerTest {
         assertEquals("#EAF2FA", data.appearance.mainColor);
         assertEquals(0.10f, data.appearance.opacity);
         assertEquals(GlassDebugView.OFF, data.performance.debugView);
-        assertEquals(2, data.schemaVersion);
+        assertEquals(LiquidGlassConfigData.CURRENT_SCHEMA_VERSION, data.schemaVersion);
         assertFalse(data.highQualityWarningAcknowledged);
     }
 
@@ -52,7 +52,7 @@ class LiquidGlassConfigManagerTest {
                 + "\"performance\":{\"debugView\":\"SOLID_MASK\"}}", StandardCharsets.UTF_8);
         LiquidGlassConfigData data = manager(file).load();
 
-        assertEquals(2, data.schemaVersion);
+        assertEquals(LiquidGlassConfigData.CURRENT_SCHEMA_VERSION, data.schemaVersion);
         assertEquals(9.0f, data.optics.blurRadius);
         assertEquals(GlassDebugView.OFF, data.performance.debugView);
         assertEquals(32.0f, data.fusion.distance);

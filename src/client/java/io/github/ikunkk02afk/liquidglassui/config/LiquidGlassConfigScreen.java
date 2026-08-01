@@ -35,13 +35,39 @@ public final class LiquidGlassConfigScreen {
         YetAnotherConfigLib.Builder builder = YetAnotherConfigLib.createBuilder()
                 .title(Component.translatable("liquid_glass_ui.config.title"));
         if (GlassDebugPolicy.enabled()) builder.category(developer(working));
-        builder.category(appearance(working))
+        builder.category(reGlassPort(working))
+                .category(appearance(working))
                 .category(optics(working))
                 .category(animation(working))
                 .category(interfaceOptions(working))
                 .category(performance(parent, working, manager))
                 .save(() -> save(parent, working, originalPreset, manager));
         return builder.build().generateScreen(parent);
+    }
+
+    private static ConfigCategory reGlassPort(LiquidGlassConfigData data) {
+        LiquidGlassConfigData defaults = LiquidGlassConfigData.defaults();
+        return ConfigCategory.createBuilder().name(tr("category.reglass_port"))
+                .option(enumeration("reglass_port.renderer_mode", GlassRendererMode.class,
+                        defaults.ui.rendererMode, () -> data.ui.rendererMode,
+                        value -> data.ui.rendererMode = value, "renderer_mode"))
+                .option(bool("reglass_port.enabled", defaults.ui.reGlassPortEnabled,
+                        () -> data.ui.reGlassPortEnabled, value -> data.ui.reGlassPortEnabled = value))
+                .option(ButtonOption.createBuilder()
+                        .name(tr("reglass_port.open_playground"))
+                        .text(tr("reglass_port.open_playground_button"))
+                        .description(description("reglass_port.open_playground"))
+                        .action(screen -> Minecraft.getInstance().execute(() -> ReGlassPortClient.openPlayground(screen)))
+                        .build())
+                .option(color("reglass_port.global_color", defaults.appearance.mainColor,
+                        () -> data.appearance.mainColor, value -> data.appearance.mainColor = value))
+                .option(decimal("reglass_port.global_blur", defaults.optics.blurRadius, 0, 16, 1,
+                        () -> data.optics.blurRadius, value -> data.optics.blurRadius = value))
+                .option(decimal("reglass_port.global_refraction", defaults.optics.refractionIntensity, 0, 0.10f, 0.005f,
+                        () -> data.optics.refractionIntensity, value -> data.optics.refractionIntensity = value))
+                .option(decimal("reglass_port.global_fusion", defaults.animation.mergeStrength, 0, 1, 0.01f,
+                        () -> data.animation.mergeStrength, value -> data.animation.mergeStrength = value))
+                .build();
     }
 
     private static void save(Screen parent, LiquidGlassConfigData working, GlassQualityPreset originalPreset,
@@ -114,12 +140,6 @@ public final class LiquidGlassConfigScreen {
                 .option(bool("interface.pause_menu", defaults.ui.pauseMenu, () -> data.ui.pauseMenu, value -> data.ui.pauseMenu = value))
                 .option(bool("interface.confirm_dialogs", defaults.ui.confirmDialogs, () -> data.ui.confirmDialogs, value -> data.ui.confirmDialogs = value))
                 .option(bool("interface.replace_common", defaults.ui.replaceCommonButtons, () -> data.ui.replaceCommonButtons, value -> data.ui.replaceCommonButtons = value))
-                .option(ButtonOption.createBuilder()
-                        .name(tr("interface.open_reglass_playground"))
-                        .text(tr("interface.open_reglass_playground_button"))
-                        .description(description("interface.open_reglass_playground"))
-                        .action(screen -> Minecraft.getInstance().execute(() -> ReGlassPortClient.openPlayground(screen)))
-                        .build())
                 .build();
     }
 

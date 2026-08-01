@@ -19,9 +19,8 @@ public final class ReGlassLegacyRenderer implements AutoCloseable {
     private int screenHeight;
     private int framebufferWidth;
     private int framebufferHeight;
-    private int runtimeFailedGeneration = Integer.MIN_VALUE;
+    private final ReGlassGenerationLatch failureLatch = new ReGlassGenerationLatch();
     private boolean captured;
-    private boolean failureLogged;
     private Metrics metrics = new Metrics(0, 0, 0, 0);
 
     public ReGlassLegacyRenderer(Logger logger) {
@@ -32,8 +31,7 @@ public final class ReGlassLegacyRenderer implements AutoCloseable {
     public void registerShaders() {
         shaders.register(() -> {
             framebuffers.invalidate();
-            runtimeFailedGeneration = Integer.MIN_VALUE;
-            failureLogged = false;
+            failureLatch.successfulReload();
         });
     }
 
@@ -84,12 +82,10 @@ public final class ReGlassLegacyRenderer implements AutoCloseable {
     }
 
     public Metrics metrics() { return metrics; }
-    public boolean available() { return shaders.ready() && runtimeFailedGeneration != shaders.generation(); }
+    public boolean available() { return shaders.ready() && !failureLatch.failed(shaders.generation()); }
 
     private void fail(String stage, Throwable throwable) {
-        runtimeFailedGeneration = shaders.generation();
-        if (!failureLogged) {
-            failureLogged = true;
+        if (failureLatch.fail(shaders.generation())) {
             logger.error("ReGlass Port disabled for resource generation {} after {} failure",
                     shaders.generation(), stage, throwable);
         }
