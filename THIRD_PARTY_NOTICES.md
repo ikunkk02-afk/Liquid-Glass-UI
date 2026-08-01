@@ -33,7 +33,9 @@ The following 1.21.1 integration files are original compatibility implementation
 - `src/client/java/io/github/ikunkk02afk/liquidglassui/reglassport/render/ReGlassLegacyRenderer.java`
 - `src/client/java/io/github/ikunkk02afk/liquidglassui/reglassport/render/ReGlassRenderStateGuard.java`
 - `src/client/java/io/github/ikunkk02afk/liquidglassui/reglassport/render/ReGlassShaderManager.java`
+- `src/client/java/io/github/ikunkk02afk/liquidglassui/reglassport/screen/ReGlassMenuController.java`
 - `src/client/java/io/github/ikunkk02afk/liquidglassui/reglassport/screen/ReGlassPlaygroundScreen.java`
+- `src/main/java/io/github/ikunkk02afk/liquidglassui/reglassport/screen/ReGlassMenuGroups.java`
 
 No ReGlass logo, screenshot, icon, font, sound, or other visual/media asset is redistributed. ReGlass is not a runtime dependency, bundled JAR, or Git submodule.
 

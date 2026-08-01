@@ -4,6 +4,8 @@ import io.github.ikunkk02afk.liquidglassui.animation.AnimationClock;
 import io.github.ikunkk02afk.liquidglassui.config.LiquidGlassConfigData;
 import io.github.ikunkk02afk.liquidglassui.config.LiquidGlassConfigManager;
 import io.github.ikunkk02afk.liquidglassui.config.GlassDebugPolicy;
+import io.github.ikunkk02afk.liquidglassui.config.GlassRendererMode;
+import io.github.ikunkk02afk.liquidglassui.reglassport.ReGlassPortClient;
 import io.github.ikunkk02afk.liquidglassui.render.GlassFrameContext;
 import io.github.ikunkk02afk.liquidglassui.render.GlassQualityBudget;
 import io.github.ikunkk02afk.liquidglassui.render.GlassRectangle;
@@ -143,12 +145,14 @@ public final class LiquidGlassScreenManager {
         }
         for (GlassGroupController controller : state.controllers.values()) controller.update(delta, config);
 
-        GlassQualityBudget quality = GlassQualityBudget.from(config);
-        var main = client.getMainRenderTarget();
-        backend.beginFrame(new GlassFrameContext(currentFrame, screen.width, screen.height,
-                main.viewWidth, main.viewHeight, client.getWindow().getGuiScale(), mouseX, mouseY,
-                quality, GlassDebugPolicy.constrain(config.performance.debugView), config.optics.blurRadius));
-        if (state.enabled) collectWidgets(state, config, quality, mouseX, mouseY);
+        if (state.enabled) {
+            GlassQualityBudget quality = GlassQualityBudget.from(config);
+            var main = client.getMainRenderTarget();
+            backend.beginFrame(new GlassFrameContext(currentFrame, screen.width, screen.height,
+                    main.viewWidth, main.viewHeight, client.getWindow().getGuiScale(), mouseX, mouseY,
+                    quality, GlassDebugPolicy.constrain(config.performance.debugView), config.optics.blurRadius));
+            collectWidgets(state, config, quality, mouseX, mouseY);
+        }
     }
 
     private void collectWidgets(ScreenState state, LiquidGlassConfigData config, GlassQualityBudget quality,
@@ -262,8 +266,10 @@ public final class LiquidGlassScreenManager {
 
     private boolean enabledFor(Screen screen, LiquidGlassConfigData config) {
         if (!config.appearance.enabled || !config.ui.replaceCommonButtons) return false;
-        if (screen instanceof TitleScreen) return config.ui.mainMenu;
-        if (screen instanceof PauseScreen) return config.ui.pauseMenu;
+        boolean legacySelected = config.ui.rendererMode == GlassRendererMode.LEGACY_EXISTING
+                || ReGlassPortClient.shouldUseLegacyFallback(screen);
+        if (screen instanceof TitleScreen) return legacySelected && config.ui.mainMenu;
+        if (screen instanceof PauseScreen) return legacySelected && config.ui.pauseMenu;
         return screen instanceof ConfirmScreen && config.ui.confirmDialogs;
     }
 

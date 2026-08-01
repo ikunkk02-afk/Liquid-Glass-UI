@@ -42,19 +42,23 @@ public final class LiquidGlassUIClient implements ClientModInitializer {
     }
 
     public static boolean tryRenderWidget(AbstractWidget widget, GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        if (ReGlassPortClient.tryRenderMenuWidget(widget, graphics, mouseX, mouseY)) return true;
         return screenManager != null && screenManager.tryRenderWidget(widget, graphics, mouseX, mouseY, delta);
     }
 
     public static void captureBackdrop(Screen screen, GuiGraphics graphics) {
+        if (ReGlassPortClient.beginMenuFrame(screen, graphics)) return;
         if (screenManager != null) screenManager.captureBackdrop(screen, graphics);
     }
 
     public static void compositeAndRenderContents(Screen screen, GuiGraphics graphics) {
+        if (ReGlassPortClient.finishMenuFrame(screen, graphics)) return;
         if (screenManager != null) screenManager.compositeAndRenderContents(screen, graphics);
     }
 
     public static boolean shouldCancelVanillaScreenBlur(Screen screen) {
-        return screenManager != null && screenManager.shouldCancelVanillaScreenBlur(screen);
+        return ReGlassPortClient.shouldCancelVanillaScreenBlur(screen)
+                || screenManager != null && screenManager.shouldCancelVanillaScreenBlur(screen);
     }
 
     public static LiquidGlassConfigManager configManager() {
