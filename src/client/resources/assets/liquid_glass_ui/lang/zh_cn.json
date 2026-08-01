@@ -1,4 +1,12 @@
 {
+  "key.categories.liquid_glass_ui": "Liquid Glass UI",
+  "key.liquid_glass_ui.open_reglass_playground": "打开 ReGlass 测试场",
+  "liquid_glass_ui.reglass_port.playground.title": "ReGlass 1.21.1 移植测试场",
+  "liquid_glass_ui.reglass_port.playground.drag_me": "拖动玻璃组件",
+  "liquid_glass_ui.reglass_port.playground.instructions": "拖动以测试独立 ReGlass 移植核心 · Esc 返回",
+  "liquid_glass_ui.config.interface.open_reglass_playground": "ReGlass 测试场",
+  "liquid_glass_ui.config.interface.open_reglass_playground.description": "打开独立的 ReGlass Legacy Port 视觉测试页面。",
+  "liquid_glass_ui.config.interface.open_reglass_playground_button": "打开",
   "liquid_glass_ui.open_settings": "液态玻璃设置",
   "liquid_glass_ui.high_quality_warning.title": "启用高质量液态玻璃？",
   "liquid_glass_ui.high_quality_warning.body": "高质量模式会启用高分辨率背景模糊、动态折射和高精度玻璃融合，可能明显增加 GPU 占用并降低帧率。建议在具有较强独立显卡的设备上使用。如果出现帧率下降、界面闪烁或着色器错误，可以切换回中质量或低质量。",

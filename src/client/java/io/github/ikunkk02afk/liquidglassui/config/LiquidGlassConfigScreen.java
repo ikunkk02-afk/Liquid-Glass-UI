@@ -12,6 +12,7 @@ import dev.isxander.yacl3.api.controller.EnumControllerBuilder;
 import dev.isxander.yacl3.api.controller.FloatSliderControllerBuilder;
 import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
 import io.github.ikunkk02afk.liquidglassui.LiquidGlassUIClient;
+import io.github.ikunkk02afk.liquidglassui.reglassport.ReGlassPortClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.ChatFormatting;
@@ -113,6 +114,12 @@ public final class LiquidGlassConfigScreen {
                 .option(bool("interface.pause_menu", defaults.ui.pauseMenu, () -> data.ui.pauseMenu, value -> data.ui.pauseMenu = value))
                 .option(bool("interface.confirm_dialogs", defaults.ui.confirmDialogs, () -> data.ui.confirmDialogs, value -> data.ui.confirmDialogs = value))
                 .option(bool("interface.replace_common", defaults.ui.replaceCommonButtons, () -> data.ui.replaceCommonButtons, value -> data.ui.replaceCommonButtons = value))
+                .option(ButtonOption.createBuilder()
+                        .name(tr("interface.open_reglass_playground"))
+                        .text(tr("interface.open_reglass_playground_button"))
+                        .description(description("interface.open_reglass_playground"))
+                        .action(screen -> Minecraft.getInstance().execute(() -> ReGlassPortClient.openPlayground(screen)))
+                        .build())
                 .build();
     }
 

@@ -1,6 +1,7 @@
 package io.github.ikunkk02afk.liquidglassui;
 
 import io.github.ikunkk02afk.liquidglassui.config.LiquidGlassConfigManager;
+import io.github.ikunkk02afk.liquidglassui.reglassport.ReGlassPortClient;
 import io.github.ikunkk02afk.liquidglassui.render.legacy.LegacyGlassRenderBackend;
 import io.github.ikunkk02afk.liquidglassui.screen.LiquidGlassScreenManager;
 import net.fabricmc.api.ClientModInitializer;
@@ -31,7 +32,12 @@ public final class LiquidGlassUIClient implements ClientModInitializer {
         screenManager = new LiquidGlassScreenManager(configManager, renderBackend);
         screenManager.register();
 
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> renderBackend.close());
+        ReGlassPortClient.initialize(LOGGER);
+
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+            ReGlassPortClient.close();
+            renderBackend.close();
+        });
         LOGGER.info("Liquid Glass UI client initialized");
     }
 

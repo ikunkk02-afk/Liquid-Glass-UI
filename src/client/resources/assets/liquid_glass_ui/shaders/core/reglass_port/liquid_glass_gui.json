@@ -1,0 +1,13 @@
+{
+  "vertex": "liquid_glass_ui:reglass_port/blit_fullscreen",
+  "fragment": "liquid_glass_ui:reglass_port/liquid_glass_gui",
+  "samplers": [
+    { "name": "RawSampler" },
+    { "name": "WidgetDataSampler" }
+  ],
+  "uniforms": [
+    { "name": "FramebufferSize", "type": "float", "count": 2, "values": [ 1920.0, 1080.0 ] },
+    { "name": "WidgetCount", "type": "int", "count": 1, "values": [ 0 ] },
+    { "name": "DebugMode", "type": "int", "count": 1, "values": [ 0 ] }
+  ]
+}
