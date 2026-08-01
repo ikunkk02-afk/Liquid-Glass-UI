@@ -13,7 +13,7 @@
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/liquid_glass_ui/icon.png",
-	"environment": "*",
+	"environment": "client",
 	"entrypoints": {
 		"main": [
 			"io.github.ikunkk02afk.liquidglassui.Liquid_glass_ui"
@@ -36,6 +36,7 @@
 		"fabricloader": ">=0.19.3",
 		"minecraft": "~1.21.1",
 		"java": ">=21",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"yet_another_config_lib_v3": ">=3.8.2"
 	}
 }
