@@ -1,77 +1,90 @@
-# ReGlass to Fabric 1.21.1 Port Study
+# ReGlass Legacy Port for Fabric 1.21.1
 
-This document records the design study completed before any ReGlass-derived implementation was added to Liquid Glass UI. The reviewed revisions are:
-
-- ReGlass `73822f89c31eb48b8a965d13c45214772b800eb7`
-- Blur+ `3507b81754ed93ec744ca5e45d1146b51081fc9f`
+This document records the source audit that gates implementation of the ReGlass-derived renderer. The reference checkout is intentionally outside this repository and pinned to ReGlass commit `73822f89c31eb48b8a965d13c45214772b800eb7` (ReGlass 1.1.0).
 
 ## License boundary
 
-ReGlass is MIT licensed by ReStudio By RedxAx. Liquid Glass UI may adapt substantial shader mathematics and the component-collection design when it keeps the original license and attribution. The full license is stored in `licenses/ReGlass-LICENSE.txt`; derived files carry a short attribution header and are enumerated in `THIRD_PARTY_NOTICES.md`.
+ReGlass is distributed under the MIT License, Copyright (c) 2025 ReStudio By RedxAx. The complete upstream text is preserved at `licenses/ReGlass-LICENSE.txt`; derivative files carry the required attribution header and are enumerated in `THIRD_PARTY_NOTICES.md` as they are introduced.
 
-Blur+ is also MIT licensed. It was inspected only as an implementation reference for the Minecraft 1.21.1 screen-blur lifecycle. No Blur+ source or shader is copied into Liquid Glass UI, so the project does not include a Blur+-derived implementation or redistribute its assets.
+No ReGlass logo, screenshot, icon, font, sound, or other artwork is copied. The reference repository, its `.git` directory, build output, and visual-reference media remain outside Liquid Glass UI and are never packaged in the mod.
 
-No ReGlass screenshot, logo, icon, sound, font, or other art asset is used. ReGlass and Blur+ are not runtime dependencies, Git submodules, or bundled JARs.
+## 1. Source-to-port mapping
 
-## ReGlass modules and disposition
+| ReGlass 1.21.8 source | ReGlass Legacy Port counterpart | Disposition |
+|---|---|---|
+| `client/api/ReGlassApi.java` | `reglassport/api/ReGlassPortApi.java` | Retain the fluent builder and deferred submission contract; translate `DrawContext`/`ClickableWidget` to Mojang-mapped `GuiGraphics`/`AbstractWidget`. |
+| `client/api/ReGlassConfig.java` | `reglassport/api/GlassPortConfig.java` | Retain ReGlass parameter names and defaults; omit redesign features outside the Playground core. |
+| `client/api/WidgetStyle.java` | `reglassport/api/GlassStyle.java`, `GlassOptics.java` | Retain optional fluent overrides and resolve them against `GlassPortConfig`; do not collapse the optics into legacy project names. |
+| `client/LiquidGlassPipelines.java` | `reglassport/render/ReGlassShaderManager.java` | Rewrite around 1.21.1 `ShaderInstance` and Fabric core-shader registration. |
+| `client/LiquidGlassUniforms.java` | `ReGlassFrameCollector.java`, `ReGlassUniformData.java` | Preserve 64 widgets, five blur levels, GUI-to-framebuffer conversion, per-widget optics, scissor, hover, and focus; replace UBOs with one `64 x 12` RGBA32F data texture. |
+| `client/LiquidGlassPrecomputeRuntime.java` | `ReGlassBlurRuntime.java`, `ReGlassFramebufferManager.java` | Preserve one separable Gaussian blur per requested radius; rewrite GPU resource management with 1.21.1 `TextureTarget`. |
+| `client/LiquidGlassWidget.java` | `reglassport/widget/LiquidGlassPortWidget.java` | Retain draggable widget behavior and narration-safe vanilla widget participation; use stable IDs and smoothed drag targets. |
+| `gui/LiquidGlassGuiElementRenderState.java` | immutable records owned by `ReGlassFrameCollector` | The 1.21.8 special GUI render-state API has no 1.21.1 equivalent. |
+| `gui/LiquidGlassGuiElementRenderer.java` | `ReGlassFrameCollector` plus the Screen render boundary | Replace special-element extraction with explicit per-frame registration. |
+| `runtime/ReGlassAnim.java` | `ReGlassAnimationRuntime.java`, `ReGlassSpringState.java` | Preserve real-time parameter smoothing; use bounded `System.nanoTime()` delta and stable widget identity. |
+| `mixin/logical/GameRendererMixin.java` | `reglassport/mixin/ReGlassPortScreenMixin.java` | Replace the 1.21.8 device render pass with capture-after-background and composite-after-widget collection. |
+| `mixin/client/ScreenMixin.java` | `ReGlassPortScreenMixin.java` | Route background capture without applying whole-screen blur or darkening cancellation. |
+| `mixin/widgets/SliderWidgetMixin.java` | no phase-1 counterpart | Studied for deferred text ordering; slider replacement is outside the accepted scope. |
+| `shaders/core/blit_fullscreen.vsh` | `shaders/core/reglass_port/blit_fullscreen.vsh` | Direct GLSL 150 adaptation under the Liquid Glass UI namespace. |
+| `shaders/program/liquid_glass_gui.fsh` | `shaders/core/reglass_port/liquid_glass_gui.fsh` | Adapt the complete SDF/optics core to data-texture decoding and group-aware fusion. |
+| `shaders/program/blur.fsh` | `shaders/core/reglass_port/blur.fsh` | Adapt the normalized separable Gaussian shader to ordinary uniforms. |
+| `shaders/program/bg.fsh` | folded into the unified composite pass | Preserve soft per-widget shadow math without a redundant whole-screen pass. |
 
-| ReGlass source | Useful design | 1.21.8 dependency | Fabric 1.21.1 disposition |
-|---|---|---|---|
-| `ReGlassApi` | Widget builder collects geometry, state, style, pose, and scissor instead of drawing immediately | `DrawContext.state.addSpecialElement` | Replace with `GlassFrameCollector`; menu adapters pre-register known buttons and the widget Mixin finalizes pose/scissor while suppressing only their vanilla surface |
-| `WidgetStyle` | Per-widget tint, blur, shadow, refraction, Fresnel, glare, hover and focus values | None conceptually | Adapt as version-independent `GlassMaterial` and `GlassOptics`; expose only user-facing controls through YACL |
-| `LiquidGlassPipelines` | One fullscreen pipeline with explicit samplers and uniform blocks | `RenderPipeline`, `GpuBuffer`, `RenderSystem.getDevice()` | Rewrite with 1.21.1 `ShaderInstance`, `CoreShaderRegistrationCallback`, `RenderTarget`, `TextureTarget`, and explicit RenderSystem bindings |
-| `LiquidGlassUniforms` | Fixed 64-widget budget, frame reset, GUI-to-framebuffer conversion, blur-level selection | std140 UBOs and `GpuBuffer` mapping | Rewrite as a reusable `64 x 12` RGBA32F data texture uploaded once per frame; perform the only Y flip while packing physical rectangles |
-| `LiquidGlassPrecomputeRuntime` | Shared blur targets computed once for all widgets | `GpuTexture`, `GpuTextureView`, `RenderPass`, command encoder | Rewrite as full-size capture plus scaled 1.21.1 `TextureTarget` ping-pong blur targets |
-| `LiquidGlassGuiElementRenderState` / renderer | GUI extraction records elements and the renderer only adds them to the frame list | `GuiRenderState`, `SpecialGuiElementRenderer` | Rewrite with `ScreenEvents`, an `AbstractWidget.renderWidget` wrapper, and a deferred button-content queue |
-| `GameRendererMixin` | One render pass binds the original background and shared blur textures, then draws one fullscreen quad | modern render pass/device API | Rewrite at the target `Screen.render` boundary: capture at HEAD, composite at RETURN, then draw deferred text; no GameRenderer-wide HUD replacement |
-| `ReGlassAnim` | Real-frame-time animation | 1.21.8 tick-counter calls | Do not copy; retain Liquid Glass UI's bounded `System.nanoTime()` clock and damped spring integrator |
-| `blit_fullscreen.vsh` | Normalized fullscreen triangle/quad mapping | Modern pipeline declaration | Reimplement a project-namespaced GLSL 150 fullscreen vertex shader for `ShaderInstance` |
-| `liquid_glass_gui.fsh` | Rounded-box SDF, analytic normal, hard/smooth boolean operations, field evaluation, refraction, dispersion, Fresnel, glare, shadow | UBO layouts and six fixed blur samplers | Adapt the mathematical core, remove unrelated pixel-grid/focus-sweep/Bloom/HUD behavior, add group-aware fusion and data-texture decoding |
-| `blur.fsh` | Shared separable blur concept | Modern pipeline resources | Do not copy; implement a compact project-owned Kawase pass normalized to the actual target size |
+## 2. GLSL that can be adapted directly
 
-## API mapping
+The GLSL 150 mathematical implementations of `SDFResult`, `screenToUV`, `sdgBox`, `opSmoothUnion`, `opHardUnion`, `opHardSubtract`, `fieldWidgets`, Gaussian sampling, edge-normal refraction, chromatic dispersion, Fresnel response, glare, shadow, hover enhancement, and focus enhancement are suitable for direct adaptation.
 
-| Minecraft 1.21.8 / ReGlass | Minecraft 1.21.1 Mojang mappings |
+Changes are limited to sampler names, uniform declarations, component decoding, group isolation, explicit capture sampling, output/discard behavior, and the debug-mode selector. The port must not replace these operations with transparent rectangles, four-corner averaging, bridge geometry, or a white-gradient highlight.
+
+## 3. Java that can be reused after package/type translation
+
+- The fluent builder shape and input clamping from `ReGlassApi`.
+- ReGlass configuration defaults and the optional-override behavior of `WidgetStyle`.
+- The draggable widget input contract from `LiquidGlassWidget`.
+- Exponential real-time interpolation and Gaussian-kernel generation.
+- Per-frame reset, unique-radius selection, 64-widget limit, and five-blur-level limit from `LiquidGlassUniforms`.
+
+All reused portions remain attributed. Mojang-mapped names replace Yarn names, and no compatibility reflection is introduced.
+
+## 4. Rendering code that must be rewritten for 1.21.1
+
+The complete resource submission layer is version-specific and must be rewritten: shader registration and reload, framebuffer ownership, main-target capture, blur target allocation, float data-texture upload, sampler binding, fullscreen drawing, render-state restoration, resize/fullscreen recovery, and failure fallback. The 1.21.8 special GUI element and device abstractions cannot be copied.
+
+## 5. Minecraft API differences
+
+| ReGlass / Minecraft 1.21.8 Yarn | Fabric 1.21.1 Mojang mappings |
 |---|---|
 | `MinecraftClient` | `Minecraft` |
 | `DrawContext` | `GuiGraphics` |
-| `GuiRenderState` / special elements | No equivalent; use target-screen collection and deferred widget contents |
-| `RenderPipeline` | `ShaderInstance` registered by Fabric's core shader callback |
-| `RenderPass` | Bind a `RenderTarget`, set viewport/state, draw through `Tesselator`/`BufferUploader` |
-| `GpuBuffer` / std140 widget UBO | RGBA32F data texture with `texelFetch` |
-| `GpuTexture` / `GpuTextureView` | `RenderTarget` / `TextureTarget` color texture IDs |
-| `RenderSystem.getDevice()` command encoder | 1.21.1 RenderSystem plus narrowly contained LWJGL calls in the legacy backend |
-| `Matrix3x2f` GUI pose | `PoseStack` / `Matrix4f`; transform corners before packing |
+| `ClickableWidget` | `AbstractWidget` / `AbstractButton` |
+| `Matrix3x2f` GUI pose | `PoseStack` / `Matrix4f` |
+| `Framebuffer` attachment views | `RenderTarget` / `TextureTarget` texture IDs |
+| `RenderPipeline`, `RenderPass` | `ShaderInstance`, `RenderSystem`, `Tesselator`, `BufferUploader` |
+| `GuiRenderState`, `SpecialGuiElementRenderer` | no equivalent; explicit Screen-boundary collection |
+| `GpuBuffer`, std140 UBO mapping | fixed uniforms plus `64 x 12` RGBA32F data texture |
+| `GpuTexture`, `GpuTextureView` | OpenGL texture IDs owned by `TextureTarget` or the data-texture service |
+| command encoder | render-thread calls guarded and restored through 1.21.1 RenderSystem/OpenGL state |
 
-The 1.21.8 Java renderer cannot be copied into 1.21.1: the render-state extraction system, special GUI element renderer, pipeline builder, device abstraction, command encoder, GPU buffers and texture views do not exist in the target runtime. Reflection or compatibility stubs would be fragile and would defeat the planned version-backend boundary.
+`ShaderInstance` loads mod shaders from `assets/<namespace>/shaders/core/<path>`, so the runtime-correct location is `assets/liquid_glass_ui/shaders/core/reglass_port/`.
 
-## Target frame flow
+## 6. Port sequence
 
-1. Before the target screen renders, reset a fixed-capacity collector and update all spring states.
-2. Pre-register visible supported buttons with logical geometry, group and material IDs.
-3. After the title panorama or rendered world is present, capture the main color target once before any widget, font or tooltip.
-4. Downsample once and compute one light and one final shared blur level for the selected quality profile.
-5. During normal widget traversal, finalize pose/scissor and defer the registered button surface/text; unsupported widgets render normally.
-6. At `Screen.render` return, upload all widget records once and execute one fullscreen glass composite pass. Pixels outside the glass/shadow field are discarded.
-7. Draw deferred button text/content in original order. Later title, pause, confirmation and tooltip rendering remains vanilla.
+1. Preserve and push the last working legacy renderer, create and push `feat/reglass-backport-1.21.1`, then pin the external reference checkout.
+2. Land this license/documentation gate and the independent package skeleton.
+3. Add the deferred API, stable widget records, H key, and a single-widget Playground proof.
+4. Add capture, separable blur, complete ReGlass optical compositing, debug modes, resource lifecycle, and automatic failure fallback.
+5. Add group-aware smooth union, bounded real-time animation, full draggable Playground, right-click creation, focused YACL mapping, and visual evidence.
+6. Stop for explicit visual acceptance. Only after acceptance may menu widgets be routed to the port renderer.
 
-The compositor explicitly binds raw capture, light blur, final blur and widget data on every invocation. Font or other GUI texture bindings are never treated as implicit input.
+## 7. Attribution and notices
 
-## Blur+ findings
+`licenses/ReGlass-LICENSE.txt` is shipped unchanged. `THIRD_PARTY_NOTICES.md` identifies ReGlass, its author, repository, license, pinned revision, derivative status, and the exact adapted files. Substantially adapted Java and GLSL files begin with:
 
-Blur+'s multiversion source shows that its 1.21.1 path calls `GameRenderer.processBlurEffect(...)` and rebinds `Minecraft.getMainRenderTarget()` afterwards. Its screen mixins determine whether a screen requested a blurred background, coordinate fade animations, handle title screens specially and account for multiple render calls.
-
-Liquid Glass UI reuses only these lifecycle lessons:
-
-- always restore/rebind the main target after off-screen work;
-- make blur invocation idempotent within one frame;
-- reset frame state at a stable render boundary;
-- recreate resources after resize/resource reload;
-- keep screen eligibility explicit.
-
-Liquid Glass UI does not call Blur+'s renderer and does not reproduce its full-screen blur, gradients, screen allow/deny lists, configuration, animations or mixins. The vanilla full-screen menu blur is cancelled for an enabled target screen; only the glass SDF samples the project's private blur texture.
-
-## Files replaced by the port
-
-The old one-widget-at-a-time `LegacyGlassRenderBackend`, `GlassButtonRenderer`, `GlassSurface` draw path and `glass_surface` shader are replaced by the frame collector, legacy framebuffer/shader/blur/composite services, deferred content renderer and unified composite shaders. The existing configuration manager, animation clock/springs, failure latch and target-screen registration are retained and adapted rather than discarded.
-
+```text
+/*
+ * Portions adapted from ReGlass by ReStudio / RedxAx.
+ * Original project: https://github.com/RedxAx/ReGlass
+ * Licensed under the MIT License.
+ * Adapted for Minecraft Fabric 1.21.1.
+ */
+```
