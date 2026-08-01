@@ -13,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import restudio.reglass.client.api.ReGlassApi;
 import restudio.reglass.client.api.WidgetStyle;
 import restudio.reglass.client.legacy1211.Legacy1211WidgetCollector;
+import restudio.reglass.client.legacy1211.Legacy1211GuiHook;
 
 public class LiquidGlassWidget extends AbstractWidget {
     private float cornerRadiusPx;
@@ -40,6 +41,13 @@ public class LiquidGlassWidget extends AbstractWidget {
 
     @Override
     public void renderWidget(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        if (Legacy1211GuiHook.get().wasComposited()) {
+            return;
+        }
+        submitGlass(context);
+    }
+
+    public void submitGlass(GuiGraphics context) {
         ReGlassApi.create(context).fromWidget(this).cornerRadius(cornerRadiusPx).style(this.style).render();
         Legacy1211WidgetCollector.get().requestComposite();
     }

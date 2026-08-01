@@ -23,6 +23,12 @@
 			"restudio.reglass.client.ReGlassClient"
 		]
 	},
+	"mixins": [
+		{
+			"config": "reglass.mixins.json",
+			"environment": "client"
+		}
+	],
 	"depends": {
 		"fabricloader": ">=0.19.3",
 		"minecraft": "~1.21.1",

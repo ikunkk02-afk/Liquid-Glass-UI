@@ -10,6 +10,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
@@ -20,17 +21,23 @@ import net.minecraft.ChatFormatting;
 import org.lwjgl.glfw.GLFW;
 import restudio.reglass.client.api.WidgetStyle;
 import restudio.reglass.client.config.ReGlassSettingsIO;
+import restudio.reglass.client.legacy1211.Legacy1211ShaderManager;
 import restudio.reglass.client.screen.config.ReGlassConfigScreen;
+import restudio.reglass.ReGlass;
 
 public class ReGlassClient implements ClientModInitializer {
     private static KeyMapping playgroundKey;
     private static KeyMapping configKey;
 
     public static Minecraft minecraftClient;
+    private static boolean developmentCaptureOpened;
+    private static int developmentCaptureReadyTicks;
+    private static int developmentCaptureTicks = -1;
 
     @Override
     public void onInitializeClient() {
         minecraftClient = Minecraft.getInstance();
+        Legacy1211ShaderManager.register();
 
         playgroundKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.reglass.playground", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, "category.reglass"));
         configKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.reglass.config", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "category.reglass"));
@@ -38,6 +45,25 @@ public class ReGlassClient implements ClientModInitializer {
         ReGlassSettingsIO.loadIntoMemory();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (Boolean.getBoolean("reglass.capturePlayground") && !developmentCaptureOpened) {
+                if (Legacy1211ShaderManager.ready() && client.getOverlay() == null && client.screen != null) {
+                    developmentCaptureReadyTicks++;
+                    if (developmentCaptureReadyTicks >= 40) {
+                        developmentCaptureOpened = true;
+                        developmentCaptureTicks = 0;
+                        client.setScreen(new PlaygroundScreen());
+                    }
+                } else {
+                    developmentCaptureReadyTicks = 0;
+                }
+            } else if (developmentCaptureTicks >= 0) {
+                developmentCaptureTicks++;
+                if (developmentCaptureTicks == 60) {
+                    Screenshot.grab(client.gameDirectory, "reglass-backport-1.21.1.png", client.getMainRenderTarget(), message -> ReGlass.LOGGER.info(message.getString()));
+                } else if (developmentCaptureTicks == 100) {
+                    client.stop();
+                }
+            }
             if (configKey.consumeClick()) {
                 client.setScreen(new ReGlassConfigScreen(null));
             }
@@ -61,6 +87,11 @@ public class ReGlassClient implements ClientModInitializer {
 
             customStyle = WidgetStyle.create().tint(ChatFormatting.GOLD.getColor(), 0.4f).blurRadius(0).shadow(25f, 0.2f, 0f, 3f).smoothing(.05f).shadowColor(0x000000, 1.0f);
             addRenderableWidget(new LiquidGlassWidget(width / 2 - 75, height / 2 - 25, 150, 50, customStyle).setMoveable(true));
+            if (Boolean.getBoolean("reglass.capturePlayground")) {
+                addRenderableWidget(new LiquidGlassWidget(width / 2 - 120, height / 2 + 20, 100, 100, WidgetStyle.create().smoothing(.05f)).setMoveable(true));
+                addRenderableWidget(new LiquidGlassWidget(width / 2 - 50, height / 2 + 35, 100, 100, WidgetStyle.create().smoothing(.05f)).setMoveable(true));
+                addRenderableWidget(new LiquidGlassWidget(width / 2 + 20, height / 2 + 20, 100, 100, WidgetStyle.create().smoothing(.05f)).setMoveable(true));
+            }
             addRenderableWidget(Button.builder(Component.literal("Toggle BG Blur"), b -> blur = !blur).bounds(10, 10, 120, 20).build());
         }
 
