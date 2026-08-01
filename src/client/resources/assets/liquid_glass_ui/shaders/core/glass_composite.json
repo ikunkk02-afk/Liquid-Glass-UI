@@ -1,0 +1,17 @@
+{
+  "vertex": "liquid_glass_ui:fullscreen",
+  "fragment": "liquid_glass_ui:glass_composite",
+  "samplers": [
+    { "name": "RawSampler" },
+    { "name": "LightBlurSampler" },
+    { "name": "FullBlurSampler" },
+    { "name": "WidgetDataSampler" }
+  ],
+  "uniforms": [
+    { "name": "FramebufferSize", "type": "float", "count": 2, "values": [ 1920.0, 1080.0 ] },
+    { "name": "WidgetCount", "type": "int", "count": 1, "values": [ 0 ] },
+    { "name": "DebugMode", "type": "int", "count": 1, "values": [ 0 ] },
+    { "name": "SampleCount", "type": "int", "count": 1, "values": [ 4 ] },
+    { "name": "RefractionQuality", "type": "int", "count": 1, "values": [ 1 ] }
+  ]
+}
